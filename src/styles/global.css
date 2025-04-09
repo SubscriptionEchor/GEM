@@ -1,0 +1,43 @@
+@import './theme.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background-primary text-text-primary;
+    font-family: ABCDiatype, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+}
+
+/* Splash Screen */
+.splash-screen {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  @apply bg-background-primary;
+}
+
+.logo-container {
+  position: relative;
+  padding: var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  font-family: ABCDiatype, sans-serif;
+  font-size: 4rem;
+  font-weight: bold;
+  letter-spacing: -0.02em;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  @apply text-text-primary;
+  text-transform: uppercase;
+}
