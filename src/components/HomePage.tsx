@@ -147,7 +147,8 @@ const HomePage: React.FC = () => {
             >
               <span className="text-2xl">💰</span>
             </motion.div>
-          )})}
+            );
+          })}
 
           <motion.div
             animate={{
@@ -187,23 +188,72 @@ const HomePage: React.FC = () => {
       {/* Timer Display */}
       <motion.div
         className="bg-background-darker rounded-3xl p-6 mb-8 relative overflow-hidden"
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ scale: miningActive ? 1.02 : 1 }}
         transition={{ type: "spring", stiffness: 300 }}
       >
+        {/* Glow effect when mining is active */}
+        {miningActive && (
+          <motion.div
+            className="absolute inset-0 bg-accent-info/10"
+            animate={{
+              opacity: [0.1, 0.2, 0.1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+        )}
+
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-accent-info/20 rounded-xl flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-accent-info/20 rounded-lg flex items-center justify-center">
               <span role="img" aria-label="timer" className="text-accent-info">⏳</span>
             </div>
-            <div>
-              <h3 className="font-bold text-text-primary text-2xl tracking-wider">
+            <div className="flex flex-col">
+              <h3 className={clsx(
+                "font-bold text-sm tracking-wider tabular-nums leading-none whitespace-nowrap",
+                miningActive ? "text-accent-info" : "text-text-primary"
+              )}>
                 {Math.floor(timeRemaining / 3600).toString().padStart(2, '0')}H{' '}
                 {Math.floor((timeRemaining % 3600) / 60).toString().padStart(2, '0')}M{' '}
                 {(timeRemaining % 60).toString().padStart(2, '0')}S
               </h3>
-              <p className="text-sm text-text-secondary">Mining Session</p>
+              <p className="text-[10px] text-text-secondary mt-0.5">Mining Session</p>
             </div>
           </div>
+          
+          {/* Start Mining Button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleStartMining}
+            className={clsx(
+              "px-8 py-3 rounded-2xl text-base font-bold relative overflow-hidden",
+              miningActive 
+                ? "bg-background-dark text-text-secondary border border-border-medium"
+                : "bg-gradient-to-r from-accent-primary to-accent-warning text-white"
+            )}
+          >
+            {/* Shine effect */}
+            <motion.div
+              className="absolute inset-0 w-[20%] bg-gradient-to-r from-white/40 via-white/20 to-transparent skew-x-12"
+              animate={{
+                x: ['-100%', '400%'],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "linear",
+                repeatDelay: 0.5
+              }}
+            />
+            {/* Button text */}
+            <span className="relative z-10">
+            {miningActive ? 'In Progress' : 'Start Mining'}
+            </span>
+          </motion.button>
         </div>
         
         <div className="flex gap-2 mb-3">
@@ -212,47 +262,28 @@ const HomePage: React.FC = () => {
               key={i}
               className={clsx(
                 "flex-1 h-2 rounded-full",
-                i < Math.floor((timeRemaining / (8 * 60 * 60)) * 8) ? "bg-accent-info" : "bg-background-dark"
+                i < Math.floor((timeRemaining / (8 * 60 * 60)) * 8) 
+                  ? "bg-accent-info" 
+                  : "bg-background-dark"
               )}
             />
           ))}
         </div>
         
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between items-center text-sm">
           <span className="text-text-secondary">Leave and restart</span>
+          {miningActive && (
+            <motion.div
+              className="flex items-center gap-2 text-accent-success"
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <div className="w-2 h-2 rounded-full bg-accent-success" />
+              <span className="text-xs font-medium">Mining Active</span>
+            </motion.div>
+          )}
         </div>
       </motion.div>
-
-      {/* Mining Button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={handleStartMining}
-        className={clsx(
-          "w-full py-4 rounded-2xl text-2xl font-bold shadow-xl relative overflow-hidden group",
-          "bg-gradient-to-r from-accent-primary to-accent-warning",
-          "border border-border-light",
-          miningActive && "animate-pulse"
-        )}
-      >
-        {/* Light beam animation */}
-        <motion.div
-          className="absolute inset-0 w-[20%] bg-gradient-to-r from-white/40 via-white/20 to-transparent skew-x-12"
-          animate={{
-            x: ['-100%', '400%'],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "linear",
-            repeatDelay: 0.5
-          }}
-        />
-        {/* Button text with glow effect */}
-        <span className="relative z-10 group-hover:text-white transition-colors duration-200">
-        {miningActive ? 'Mining in progress' : 'Start Mining'}
-        </span>
-      </motion.button>
       </main>
 
       {/* Navigation */}
