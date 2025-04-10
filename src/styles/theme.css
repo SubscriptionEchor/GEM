@@ -1,26 +1,45 @@
 :root {
   /* Base colors */
-  --background-primary: #0b1419;
-  --background-secondary: #1b252b;
-  --background-tertiary: #666d79;
+  --background-primary: #0b1519;    /* Default background */
+  --background-light: #ffffff;      /* White background */
+  --background-lighter: #f3f3f3;    /* Light gray background */
+  --background-light-alt: #f3f3f3bf;/* Light gray with transparency */
+  --background-accent: #58be4f;     /* Green accent background */
+  --background-warning: #ec4e02;    /* Orange warning background */
+  --background-muted: #666d79;      /* Muted gray background */
+  --background-dark: #1b252b;       /* Dark background */
+  --background-darker: #0b1419;     /* Darker background */
   
   /* Text colors */
-  --text-primary: #ffffff;
-  --text-secondary: #f1f3f4;
-  --text-tertiary: #666d79;
-  --text-accent: #ec4e02;
+  --text-primary: #ffffff;    /* Pure white text */
+  --text-secondary: #ffffff99; /* 60% white */
+  --text-muted: #f1f3f4;      /* Slightly muted white */
+  --text-tertiary: #666d79;   /* Gray text */
+  --text-accent: #ec4e02;     /* Orange accent text */
+  --text-dark: #0b1419;       /* Dark text */
+  --text-black: #000000;      /* Pure black text */
   
   /* Accent colors */
-  --accent-primary: #ec4e02;
-  --accent-success: #58be4f;
-  --accent-warning: #eab308;
-  --accent-info: #3b82f6;
-  --accent-purple: #a855f7;
+  --accent-primary: #ec4e02;   /* Orange primary */
+  --accent-success: #22c55e;   /* Green success */
+  --accent-warning: #eab308;   /* Yellow warning */
+  --accent-info: #3b82f6;      /* Blue info */
+  --accent-purple: #a855f7;    /* Purple accent */
   
   /* Border colors */
-  --border-light: #ffffff66;
-  --border-medium: #ffffff33;
-  --border-dark: #666d79;
+  --border-light: #ffffff66;    /* Light border - 40% white */
+  --border-medium: #ffffff33;   /* Medium border - 20% white */
+  --border-dark: #666d79;       /* Dark border */
+  --border-warning: #eab308;    /* Warning accent border */
+  --border-success: #22c55e;    /* Success accent border */
+  --border-info: #3b82f6;       /* Info accent border */
+  --border-purple: #a855f7;     /* Purple accent border */
+  
+  /* Fill colors */
+  --fill-light: #ffffff99;     /* 60% white */
+  --fill-muted: #f1f3f4;       /* Slightly muted white */
+  --fill-accent: #ec4e02;      /* Orange accent */
+  --fill-dark: #000000;        /* Pure black */
   
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-warning));

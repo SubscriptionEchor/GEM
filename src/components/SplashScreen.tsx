@@ -19,6 +19,7 @@ const SplashScreen: React.FC = () => {
             ease: "easeOut",
             delay: 0.3
           }}
+          style={{ fontWeight: 500 }}
         >
           GEM
         </motion.h1>

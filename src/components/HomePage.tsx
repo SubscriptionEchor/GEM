@@ -1,0 +1,260 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { formatDuration } from '../utils/timeUtils';
+import { formatNumber, formatUSDT } from '../utils/numberUtils';
+import clsx from 'clsx';
+
+const HomePage: React.FC = () => {
+  const [miningActive, setMiningActive] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(8 * 60 * 60); // 8 hours in seconds
+  const [gemBalance, setGemBalance] = useState(61.77871);
+  const [miningRate, setMiningRate] = useState(4.02);
+  const [usdtValue, setUsdtValue] = useState(0.006956);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (miningActive && timeRemaining > 0) {
+      timer = setInterval(() => {
+        setTimeRemaining(prev => Math.max(0, prev - 1));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [miningActive, timeRemaining]);
+
+  const handleStartMining = () => {
+    setMiningActive(true);
+    setTimeRemaining(8 * 60 * 60);
+  };
+
+  return (
+    <div className="min-h-screen bg-background-primary p-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute w-full h-full opacity-10"
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          style={{
+            backgroundImage: 'radial-gradient(circle, var(--accent-primary) 1px, transparent 1px)',
+            backgroundSize: '50px 50px',
+          }}
+        />
+      </div>
+
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-2">
+          <span className="text-text-muted font-medium">UID: 1318343</span>
+          <motion.span 
+            className="bg-accent-warning px-2 py-0.5 rounded text-sm font-bold"
+            whileHover={{ scale: 1.05 }}
+          >
+            Lv 0
+          </motion.span>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="p-2 rounded-full bg-background-primary backdrop-blur-sm"
+        >
+          <span className="sr-only">Global</span>
+          🌍
+        </motion.button>
+      </div>
+
+      {/* Balance Display */}
+      <motion.div 
+        className="text-center mb-12"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <motion.span 
+            className="text-text-primary text-5xl font-bold tracking-tight"
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            {formatNumber(gemBalance)} GEM
+          </motion.span>
+        </div>
+        <div className="text-text-tertiary text-sm">
+          ={formatUSDT(gemBalance * usdtValue)} USDT
+        </div>
+      </motion.div>
+
+      {/* Mining Animation */}
+      <div className="relative flex justify-center items-center mb-12">
+        {/* Glow Effect */}
+        <div className="absolute inset-0 bg-accent-primary opacity-20 blur-3xl" />
+        
+        {/* Orbiting Coins */}
+        {[0, 120, 240].map((degree, index) => (
+          <motion.div
+            key={index}
+            className="absolute w-8 h-8"
+            animate={{
+              rotate: [degree, degree + 360]
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            style={{
+              transformOrigin: "120px center"
+            }}
+          >
+            <span className="text-2xl">💰</span>
+          </motion.div>
+        ))}
+
+        <motion.div
+          animate={{
+            y: [0, -8, 0],
+            scale: [1, 1.05, 1]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="w-40 h-40 bg-gradient-to-br from-accent-primary to-accent-warning 
+                     rounded-full flex items-center justify-center shadow-2xl relative z-10
+                     border-4 border-white/10"
+        >
+          <span className="text-6xl">💎</span>
+        </motion.div>
+        
+        {/* Mining Rate */}
+        <motion.div 
+          className="absolute -bottom-8 text-center w-full"
+          animate={{ y: [0, -2, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <div className="text-2xl font-bold bg-gradient-to-r from-accent-info to-accent-purple 
+                          bg-clip-text text-transparent">
+            {formatNumber(miningRate)} GEM/H
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Timer Display */}
+      <motion.div 
+        className="bg-background-primary/80 backdrop-blur-sm rounded-2xl p-6 mb-8 
+                   border border-border-medium shadow-lg"
+        whileHover={{ scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
+        <div className="text-center text-4xl font-bold mb-2 bg-gradient-to-r 
+                        from-text-primary to-text-muted bg-clip-text text-transparent">
+          {formatDuration(timeRemaining)}
+        </div>
+        <div className="text-center text-text-tertiary">
+          Leave and restart
+        </div>
+      </motion.div>
+
+      {/* Mining Button */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={handleStartMining}
+        className={clsx(
+          "w-full py-4 rounded-2xl text-2xl font-bold shadow-xl relative overflow-hidden",
+          "bg-gradient-to-r from-accent-primary to-accent-warning",
+          "border border-border-light",
+          miningActive && "animate-pulse"
+        )}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50" />
+        {miningActive ? 'Mining in progress' : 'Start Mining'}
+      </motion.button>
+
+      {/* Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-background-dark backdrop-blur-md">
+        <div className="flex justify-between items-center px-8 py-3 mx-auto max-w-md border-t border-border-medium">
+          <motion.button 
+            className="flex flex-col items-center gap-1.5 text-text-primary relative group"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-6 h-6 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <span className="text-[10px] font-medium tracking-wide">Home</span>
+          </motion.button>
+
+          <motion.button 
+            className="flex flex-col items-center gap-1.5 text-text-secondary group relative"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {/* Glowing background circle */}
+            <motion.div 
+              className="absolute top-0 w-14 h-14 rounded-full bg-gradient-to-br from-accent-primary/30 to-accent-warning/30 blur-lg"
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.5, 0.8, 0.5]
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            
+            {/* Main circle background */}
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent-primary to-accent-warning flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-[2px] rounded-full bg-background-darker/95" />
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"
+                animate={{
+                  rotate: [0, 180],
+                  scale: [1, 1.5, 1]
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              />
+              <svg viewBox="0 0 24 24" className="w-6 h-6 relative z-10" style={{ fill: 'var(--fill-muted)' }}>
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+            <span className="text-[10px] font-medium tracking-wide">Upgrade</span>
+          </motion.button>
+
+          <motion.button 
+            className="flex flex-col items-center gap-1.5 text-text-secondary group"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-6 h-6 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-5 h-5" style={{ fill: 'var(--fill-light)' }}>
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <span className="text-[10px] font-medium tracking-wide">Referral</span>
+          </motion.button>
+        </div>
+      </nav>
+    </div>
+  );
+};
+
+export default HomePage;
