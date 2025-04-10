@@ -6,14 +6,30 @@ import Lottie from 'lottie-react';
 import { AnimatePresence } from 'framer-motion';
 import fallingDiamondsAnimation from '../assets/animations/diamond falling.json';
 import diamondAnimation from '../assets/animations/diamond.json';
+import { useBoost } from '../contexts/BoostContext';
 
-const HomePage: React.FC = () => {
+interface HomePageProps {
+  onNavigate: (page: string) => void;
+}
+
+const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [miningActive, setMiningActive] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(8 * 60 * 60); // 8 hours in seconds
   const [gemBalance, setGemBalance] = useState(61.77871);
   const [miningRate, setMiningRate] = useState(5.00); // Base mining rate: 5 GEM/hour
+  const { activeBoosts, removeExpiredBoosts, getTotalBoost } = useBoost();
   const usdtValue = 0.006956; // Convert to constant since it's not being updated
+
+  useEffect(() => {
+    // Update mining rate when boosts change
+    const baseRate = 5.00;
+    setMiningRate(baseRate + getTotalBoost());
+    
+    // Check for expired boosts every minute
+    const boostTimer = setInterval(removeExpiredBoosts, 60000);
+    return () => clearInterval(boostTimer);
+  }, [activeBoosts, getTotalBoost, removeExpiredBoosts]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -168,6 +184,29 @@ const HomePage: React.FC = () => {
           </motion.span>
         </div>
         <div className="text-text-tertiary text-sm">
+          {/* Active Boosts Pills */}
+          {activeBoosts.length > 0 && (
+            <div className="flex gap-2 justify-center mt-2 mb-1">
+              {activeBoosts.map((boost) => {
+                const hoursLeft = Math.max(0, Math.floor((boost.expiresAt - Date.now()) / (1000 * 60 * 60)));
+                return (
+                  <motion.div
+                    key={boost.id}
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1
+                      ${boost.equipment === 'Bronze' ? 'bg-[#CD7F32]/20 text-[#CD7F32]' :
+                        boost.equipment === 'Silver' ? 'bg-[#C0C0C0]/20 text-[#C0C0C0]' :
+                        'bg-[#FFD700]/20 text-[#FFD700]'}`}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  >
+                    <span>+{boost.boost} GEM/h</span>
+                    <span className="opacity-60">({hoursLeft}h)</span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
           ={formatUSDT(gemBalance * usdtValue)} USDT
         </div>
       </motion.div>
@@ -377,6 +416,7 @@ const HomePage: React.FC = () => {
             className="flex flex-col items-center gap-1.5 text-text-secondary group relative"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => onNavigate('upgrade')}
           >
             {/* Glowing background circle */}
             <motion.div 
@@ -418,6 +458,7 @@ const HomePage: React.FC = () => {
             className="flex flex-col items-center gap-1.5 text-text-secondary group relative"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => onNavigate('referral')}
           >
             <div className="w-6 h-6 flex items-center justify-center">
               <svg viewBox="0 0 24 24" className="w-5 h-5" style={{ fill: 'var(--fill-light)' }}>

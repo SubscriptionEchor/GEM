@@ -1,9 +1,13 @@
 import SplashScreen from './components/SplashScreen';
 import HomePage from './components/HomePage';
+import UpgradePage from './components/UpgradePage';
+import ReferralPage from './components/ReferralPage';
 import { useState, useEffect } from 'react';
+import { BoostProvider } from './contexts/BoostContext';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const [currentPage, setCurrentPage] = useState('home');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -15,7 +19,17 @@ function App() {
 
   return (
     <div className="app">
-      {showSplash ? <SplashScreen /> : <HomePage />}
+      <BoostProvider>
+        {showSplash ? (
+          <SplashScreen />
+        ) : (
+          <>
+            {currentPage === 'home' && <HomePage onNavigate={setCurrentPage} />}
+            {currentPage === 'upgrade' && <UpgradePage onNavigate={setCurrentPage} />}
+            {currentPage === 'referral' && <ReferralPage onNavigate={setCurrentPage} />}
+          </>
+        )}
+      </BoostProvider>
     </div>
   );
 }
