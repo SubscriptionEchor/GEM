@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { formatDuration } from '../utils/timeUtils';
 import { formatNumber, formatUSDT } from '../utils/numberUtils';
 import clsx from 'clsx';
 
@@ -31,9 +30,10 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background-primary p-4 relative overflow-hidden">
+    <div className="fixed inset-0 bg-background-primary flex flex-col overflow-hidden">
+      <main className="flex-1 overflow-y-auto scrollbar-hide p-4 pb-20">
       {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute w-full h-full opacity-10"
           animate={{
@@ -151,18 +151,41 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Timer Display */}
-      <motion.div 
-        className="bg-background-primary/80 backdrop-blur-sm rounded-2xl p-6 mb-8 
-                   border border-border-medium shadow-lg"
+      <motion.div
+        className="bg-background-darker rounded-3xl p-6 mb-8 relative overflow-hidden"
         whileHover={{ scale: 1.02 }}
         transition={{ type: "spring", stiffness: 300 }}
       >
-        <div className="text-center text-4xl font-bold mb-2 bg-gradient-to-r 
-                        from-text-primary to-text-muted bg-clip-text text-transparent">
-          {formatDuration(timeRemaining)}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-accent-info/20 rounded-xl flex items-center justify-center">
+              <span role="img" aria-label="timer" className="text-accent-info">⏳</span>
+            </div>
+            <div>
+              <h3 className="font-bold text-text-primary text-2xl tracking-wider">
+                {Math.floor(timeRemaining / 3600).toString().padStart(2, '0')}H{' '}
+                {Math.floor((timeRemaining % 3600) / 60).toString().padStart(2, '0')}M{' '}
+                {(timeRemaining % 60).toString().padStart(2, '0')}S
+              </h3>
+              <p className="text-sm text-text-secondary">Mining Session</p>
+            </div>
+          </div>
         </div>
-        <div className="text-center text-text-tertiary">
-          Leave and restart
+        
+        <div className="flex gap-2 mb-3">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className={clsx(
+                "flex-1 h-2 rounded-full",
+                i < Math.floor((timeRemaining / (8 * 60 * 60)) * 8) ? "bg-accent-info" : "bg-background-dark"
+              )}
+            />
+          ))}
+        </div>
+        
+        <div className="flex justify-between text-sm">
+          <span className="text-text-secondary">Leave and restart</span>
         </div>
       </motion.div>
 
@@ -181,9 +204,10 @@ const HomePage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50" />
         {miningActive ? 'Mining in progress' : 'Start Mining'}
       </motion.button>
+      </main>
 
       {/* Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background-dark backdrop-blur-md">
+      <nav className="w-full bg-background-dark backdrop-blur-md z-50">
         <div className="flex justify-between items-center px-8 py-3 mx-auto max-w-md border-t border-border-medium">
           <motion.button 
             className="flex flex-col items-center gap-1.5 text-text-primary relative group"
@@ -196,7 +220,7 @@ const HomePage: React.FC = () => {
                 <polyline points="9 22 9 12 15 12 15 22"/>
               </svg>
             </div>
-            <span className="text-[10px] font-medium tracking-wide">Home</span>
+            <span className="text-sm font-medium tracking-wide">Home</span>
           </motion.button>
 
           <motion.button 
@@ -237,11 +261,11 @@ const HomePage: React.FC = () => {
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </svg>
             </div>
-            <span className="text-[10px] font-medium tracking-wide">Upgrade</span>
+            <span className="text-sm font-medium tracking-wide">Upgrade</span>
           </motion.button>
 
           <motion.button 
-            className="flex flex-col items-center gap-1.5 text-text-secondary group"
+            className="flex flex-col items-center gap-1.5 text-text-secondary group relative"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -253,7 +277,7 @@ const HomePage: React.FC = () => {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
             </div>
-            <span className="text-[10px] font-medium tracking-wide">Referral</span>
+            <span className="text-sm font-medium tracking-wide">Referral</span>
           </motion.button>
         </div>
       </nav>
