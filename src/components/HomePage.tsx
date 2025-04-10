@@ -9,21 +9,25 @@ const HomePage: React.FC = () => {
   const [timeRemaining, setTimeRemaining] = useState(8 * 60 * 60); // 8 hours in seconds
   const [gemBalance, setGemBalance] = useState(61.77871);
   const [miningRate, setMiningRate] = useState(4.02);
-  const [usdtValue, setUsdtValue] = useState(0.006956);
+  const usdtValue = 0.006956; // Convert to constant since it's not being updated
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (miningActive && timeRemaining > 0) {
       timer = setInterval(() => {
         setTimeRemaining(prev => Math.max(0, prev - 1));
+        // Update GEM balance based on mining rate
+        setGemBalance(prev => prev + (miningRate / 3600)); // Convert hourly rate to per-second
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [miningActive, timeRemaining]);
+  }, [miningActive, timeRemaining, miningRate]);
 
   const handleStartMining = () => {
     setMiningActive(true);
     setTimeRemaining(8 * 60 * 60);
+    // Reset mining rate when starting new session
+    setMiningRate(4.02);
   };
 
   return (
