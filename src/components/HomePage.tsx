@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { formatNumber } from '../utils/numberUtils';
 import clsx from 'clsx';
 import Lottie from 'lottie-react';
-import miningHillAnimation from '../assets/animations/mining hill.json';
+import magicHammerAnimation from '../assets/animations/magic-hammer.json';
 import { AnimatePresence } from 'framer-motion';
 import fallingDiamondsAnimation from '../assets/animations/diamond falling.json';
 import diamondAnimation from '../assets/animations/diamond.json';
@@ -202,13 +202,23 @@ const HomePage: React.FC<HomePageProps> = () => {
         {/* Pick Axe Animation */}
         {miningActive && (
           <motion.div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] z-20"
+            className="absolute left-[25%] top-[20%] w-[140px] h-[140px] z-30"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ 
+              opacity: 1,
+              rotate: [0, 45, 0],
+              x: [0, 25, 0],
+              y: [0, -10, 0]
+            }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
             exit={{ opacity: 0 }}
           >
             <Lottie
-              animationData={miningHillAnimation}
+              animationData={magicHammerAnimation}
               loop={true}
               autoplay={true}
               style={{ width: '100%', height: '100%' }}
@@ -218,7 +228,7 @@ const HomePage: React.FC<HomePageProps> = () => {
         
         {/* Orbiting Elements */}
         <div className="relative w-[280px] h-[280px]">
-          {miningActive && [...Array(5)].map((_, index) => {
+          {miningActive && [...Array(10)].map((_, index) => {
             const randomX = (Math.random() - 0.5) * 200; // Random X position between -100 and 100
             const randomY = Math.random() * 150 + 50; // Random Y position between 50 and 200
             const randomDelay = Math.random() * 2; // Random delay between 0 and 2 seconds
@@ -227,7 +237,7 @@ const HomePage: React.FC<HomePageProps> = () => {
             return (
               <motion.div
               key={index}
-              className="absolute left-1/2 top-1/2 w-8 h-8 -ml-4 -mt-4"
+              className="absolute left-1/2 top-1/2 w-12 h-12 -ml-6 -mt-6"
               initial={{ scale: 0, y: 0, x: 0 }}
               animate={{
                 scale: [0, 1, 1],
@@ -242,7 +252,7 @@ const HomePage: React.FC<HomePageProps> = () => {
                 ease: "easeOut"
               }}
             >
-              <span className="text-2xl">💰</span>
+              <span className="text-4xl">💰</span>
               </motion.div>
             );
           })}
@@ -250,15 +260,15 @@ const HomePage: React.FC<HomePageProps> = () => {
           <motion.div
             animate={{
               y: [0, -8, 0],
-              scale: [1, 1.05, 1]
+              scale: [1, 0.95, 1]
             }}
             transition={{
-              duration: 2,
+              duration: 1.5,
               repeat: Infinity,
               ease: "easeInOut"
             }}
             className="absolute left-1/2 top-1/2 -ml-20 -mt-20 w-40 h-40
-                       flex items-center justify-center z-10"
+                       flex items-center justify-center z-20"
           >
             <Lottie
               animationData={diamondAnimation}
