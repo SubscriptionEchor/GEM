@@ -3,11 +3,13 @@ import { motion } from 'framer-motion';
 import { formatNumber, formatUSDT } from '../utils/numberUtils';
 import clsx from 'clsx';
 import Lottie from 'lottie-react';
+import { AnimatePresence } from 'framer-motion';
 import fallingDiamondsAnimation from '../assets/animations/diamond falling.json';
 import diamondAnimation from '../assets/animations/diamond.json';
 
 const HomePage: React.FC = () => {
   const [miningActive, setMiningActive] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(8 * 60 * 60); // 8 hours in seconds
   const [gemBalance, setGemBalance] = useState(61.77871);
   const [miningRate, setMiningRate] = useState(5.00); // Base mining rate: 5 GEM/hour
@@ -70,10 +72,12 @@ const HomePage: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
+          {/* UID Display */}
           <div className="flex items-center gap-2 bg-background-darker/80 px-2 py-0.5 rounded-lg border border-border-medium">
             <span className="text-text-secondary text-sm">UID:</span>
             <span className="text-text-primary font-medium">1318343</span>
           </div>
+          {/* Level Badge */}
           <motion.span 
             className="bg-gradient-to-r from-accent-warning to-accent-primary px-2 py-0.5 rounded-lg text-sm font-bold"
             whileHover={{ scale: 1.05 }}
@@ -81,6 +85,70 @@ const HomePage: React.FC = () => {
             Lv 0
           </motion.span>
         </div>
+        
+        {/* Info Button */}
+        <motion.button
+          onClick={() => setShowInfoModal(true)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-background-darker/80 text-accent-info"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </motion.button>
+
+        {/* Info Modal */}
+        <AnimatePresence>
+          {showInfoModal && (
+            <>
+              {/* Modal Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowInfoModal(false)}
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center"
+              />
+              
+              {/* Modal Content */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm
+                         bg-background-darker/95 backdrop-blur-md rounded-2xl p-6 z-[101]
+                         border border-border-medium shadow-xl
+                         flex flex-col gap-4"
+                style={{
+                  maxHeight: 'calc(100vh - 4rem)',
+                  overflowY: 'auto',
+                  margin: 'auto'
+                }}
+              >
+                <h3 className="text-xl font-bold text-text-primary">Mining Rules</h3>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex gap-2 text-text-secondary">
+                    <span className="text-accent-info">⏳</span>
+                    Mining automatically stops after 8 hours
+                  </li>
+                  <li className="flex gap-2 text-text-secondary">
+                    <span className="text-accent-warning">⚠️</span>
+                    Users can't manually stop mining once started
+                  </li>
+                  <li className="flex gap-2 text-text-secondary">
+                    <span className="text-accent-success">✓</span>
+                    Mining continues in the background as designed
+                  </li>
+                  <li className="flex gap-2 text-text-secondary">
+                    <span className="text-accent-primary">↻</span>
+                    Users can start a new session after the current one ends
+                  </li>
+                </ul>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Balance Display */}
@@ -108,27 +176,29 @@ const HomePage: React.FC = () => {
       <div className="relative flex justify-center items-center mb-12">
         {/* Glow Effect */}
         <div className="absolute inset-0 bg-accent-primary opacity-20 blur-3xl" />
-
+        
         {/* Falling Diamonds Animation */}
-        <div className="absolute inset-0 -z-10">
+        {miningActive && (
+          <div className="absolute inset-0 -z-10">
           <Lottie
             animationData={fallingDiamondsAnimation}
             loop={true}
             autoplay={true}
             style={{ width: '100%', height: '100%' }}
           />
-        </div>
+          </div>
+        )}
         
         {/* Orbiting Elements */}
         <div className="relative w-[280px] h-[280px]">
-          {[...Array(5)].map((_, index) => {
+          {miningActive && [...Array(5)].map((_, index) => {
             const randomX = (Math.random() - 0.5) * 200; // Random X position between -100 and 100
             const randomY = Math.random() * 150 + 50; // Random Y position between 50 and 200
             const randomDelay = Math.random() * 2; // Random delay between 0 and 2 seconds
             const randomDuration = 1.5 + Math.random(); // Random duration between 1.5 and 2.5 seconds
             
             return (
-            <motion.div
+              <motion.div
               key={index}
               className="absolute left-1/2 top-1/2 w-8 h-8 -ml-4 -mt-4"
               initial={{ scale: 0, y: 0, x: 0 }}
@@ -146,7 +216,7 @@ const HomePage: React.FC = () => {
               }}
             >
               <span className="text-2xl">💰</span>
-            </motion.div>
+              </motion.div>
             );
           })}
 
@@ -187,7 +257,7 @@ const HomePage: React.FC = () => {
 
       {/* Timer Display */}
       <motion.div
-        className="bg-background-darker rounded-3xl p-6 mb-8 relative overflow-hidden"
+        className="bg-background-darker rounded-3xl p-6 mb-8 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/10"
         whileHover={{ scale: miningActive ? 1.02 : 1 }}
         transition={{ type: "spring", stiffness: 300 }}
       >
@@ -208,7 +278,7 @@ const HomePage: React.FC = () => {
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-accent-info/20 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-background-dark rounded-lg flex items-center justify-center">
               <span role="img" aria-label="timer" className="text-accent-info">⏳</span>
             </div>
             <div className="flex flex-col">
@@ -240,13 +310,13 @@ const HomePage: React.FC = () => {
             <motion.div
               className="absolute inset-0 w-[20%] bg-gradient-to-r from-white/40 via-white/20 to-transparent skew-x-12"
               animate={{
-                x: ['-100%', '400%'],
+                x: ['-200%', '400%'],
               }}
               transition={{
-                duration: 2,
+                duration: 3,
                 repeat: Infinity,
-                ease: "linear",
-                repeatDelay: 0.5
+                ease: "easeInOut",
+                repeatDelay: 1
               }}
             />
             {/* Button text */}
