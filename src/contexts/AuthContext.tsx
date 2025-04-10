@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, User, createUser } from '../lib/supabase';
-import { TelegramUser, getTelegramUser, isTelegramWebApp } from '../lib/telegram';
+import { TelegramUser, getTelegramUser } from '../lib/telegram';
 
 interface AuthContextType {
   user: User | null;
@@ -22,13 +22,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check for existing session
     checkUser();
-    
-    // Initialize auth only if we're in Telegram Mini App
-    if (isTelegramWebApp()) {
-      initializeAuth();
-    } else {
+
+    // Always try to initialize auth
+    initializeAuth().catch(error => {
+      console.error('Auth initialization failed:', error);
+      setError('Authentication failed');
       setLoading(false);
-    }
+    });
 
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -67,8 +67,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
-      setUser(data);
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn('No user data found for user ID:', userId);
+          setUser(null);
+          return;
+        }
+        throw error;
+      }
+
+      if (data) {
+        setUser(data);
+      } else {
+        console.warn('No user data found for user ID:', userId);
+        setUser(null);
+      }
     } catch (error) {
       console.error('Error loading user data:', error);
       setError('Failed to load user data');
@@ -80,16 +93,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       setError(null);
 
-      // Only proceed with Telegram auth if we're in the Telegram Mini App
-      if (!isTelegramWebApp()) {
-        console.log('Not running in Telegram Mini App environment');
-        return;
-      }
-
       // Get user data from Telegram WebApp
-      const tgUser = getTelegramUser();
+      const tgUser = await getTelegramUser();
       if (!tgUser) {
-        throw new Error('Failed to get Telegram user data');
+        console.warn('No Telegram user data available');
+        setLoading(false);
+        return;
       }
 
       // Sign in with Telegram user ID as custom token

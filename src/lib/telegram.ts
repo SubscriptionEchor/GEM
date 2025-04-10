@@ -1,5 +1,8 @@
 import WebApp from '@twa-dev/sdk';
 
+const TELEGRAM_INIT_TIMEOUT = 10000; // Increased timeout for slower connections
+const IS_PREVIEW = !window.Telegram && process.env.NODE_ENV === 'development';
+
 declare global {
   interface Window {
     Telegram: {
@@ -19,9 +22,37 @@ declare global {
         ready: () => void;
         expand: () => void;
         close: () => void;
+        isExpanded: boolean;
       };
     };
   }
+}
+
+// Wait for Telegram Web App to be initialized
+function waitForTelegramWebApp(): Promise<void> {
+  return new Promise((resolve) => {
+    // Check if WebApp is already initialized
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user || IS_PREVIEW) {
+      resolve();
+      return;
+    }
+
+    const startTime = Date.now();
+    const checkInterval = setInterval(() => {
+      // Check if WebApp is initialized or we're in preview mode
+      if (window.Telegram?.WebApp?.initDataUnsafe?.user || IS_PREVIEW) {
+        clearInterval(checkInterval);
+        resolve();
+        return;
+      }
+
+      if (Date.now() - startTime > TELEGRAM_INIT_TIMEOUT) {
+        clearInterval(checkInterval);
+        console.warn('Telegram Web App initialization timeout, falling back to preview mode');
+        resolve(); // Don't reject, just continue in preview mode
+      }
+    }, 100);
+  });
 }
 
 export interface TelegramUser {
@@ -33,17 +64,51 @@ export interface TelegramUser {
 }
 
 export function isTelegramWebApp(): boolean {
-  return !!window.Telegram?.WebApp;
+  return IS_PREVIEW || !!window.Telegram?.WebApp;
 }
 
-export function getTelegramUser(): TelegramUser | null {
-  if (!WebApp.initDataUnsafe?.user) {
+export async function getTelegramUser(): Promise<TelegramUser | null> {
+  if (!isTelegramWebApp()) {
     return null;
   }
-  return WebApp.initDataUnsafe.user;
+
+  // Return mock user data in preview mode
+  if (IS_PREVIEW) {
+    return {
+      id: 12345678,
+      first_name: 'Preview',
+      username: 'preview_user'
+    };
+  }
+  
+  try {
+    await waitForTelegramWebApp();
+    return WebApp.initDataUnsafe.user || null;
+  } catch (error) {
+    console.error('Failed to get Telegram user:', error);
+    return null;
+  }
 }
 
-export function initializeTelegramWebApp() {
-  WebApp.ready();
-  WebApp.expand();
+export async function initializeTelegramWebApp() {
+  // Skip actual initialization in preview mode
+  if (IS_PREVIEW) {
+    return;
+  }
+
+  if (!window.Telegram?.WebApp) {
+    console.warn('Telegram WebApp not available');
+    return;
+  }
+
+  try {
+    await waitForTelegramWebApp();
+    WebApp.ready();
+    if (!WebApp.isExpanded) {
+      WebApp.expand();
+    }
+  } catch (error) {
+    console.error('Failed to initialize Telegram Web App:', error);
+    throw error;
+  }
 }

@@ -31,13 +31,25 @@ export async function createUser(referralCode?: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('No authenticated user');
 
-  const { data, error } = await supabase.rpc('create_user_with_referral', {
+  // Call the RPC to create the user and handle error
+  const { error: rpcError } = await supabase.rpc('create_user_with_referral', {
     user_id: user.id,
     referral_code: referralCode
   });
 
-  if (error) throw error;
-  return data as User;
+  if (rpcError) throw rpcError;
+
+  // Fetch the newly created user data
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (userError) throw userError;
+  if (!userData) throw new Error('User data not found after creation');
+
+  return userData as User;
 }
 
 export async function getCurrentUser(): Promise<User | null> {
@@ -50,7 +62,12 @@ export async function getCurrentUser(): Promise<User | null> {
     .eq('id', user.id)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null; // No user found
+    }
+    throw error;
+  }
   return data;
 }
 

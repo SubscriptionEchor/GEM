@@ -41,17 +41,24 @@ function AppContent() {
 function App() {
   const [showSplash, setShowSplash] = useState(true);
 
+  // Initialize Telegram WebApp before showing content
   useEffect(() => {
-    // Initialize Telegram WebApp
-    initializeTelegramWebApp();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
+    const init = async () => {
+      try {
+        await initializeTelegramWebApp();
+        // After successful initialization, show content after splash
+        setTimeout(() => {
+          setShowSplash(false);
+        }, 2000);
+      } catch (error) {
+        console.error('Failed to initialize Telegram Web App:', error);
+        // Even if initialization fails, show content after splash
+        setTimeout(() => {
+          setShowSplash(false);
+        }, 2000);
+      }
+    };
+    init();
   }, []);
 
   if (showSplash) {
