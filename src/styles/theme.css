@@ -1,4 +1,11 @@
 :root {
+  /* Telegram theme variables */
+  --tg-theme-bg-color: var(--background-primary);
+  --tg-theme-text-color: var(--text-primary);
+  --tg-theme-hint-color: var(--text-secondary);
+  --tg-theme-button-color: var(--accent-primary);
+  --tg-theme-button-text-color: var(--text-primary);
+
   /* Base colors */
   --background-primary: #0b1519;    /* Default background */
   --background-light: #ffffff;      /* White background */

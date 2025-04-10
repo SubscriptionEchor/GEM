@@ -55,47 +55,53 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function updateMiningRewards(amount: number) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('No authenticated user');
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user');
 
-  // Start a transaction to update both the user and their referrer
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('referred_by, total_gems_mined')
-    .eq('id', user.id)
-    .single();
+    // First check if the user exists in the users table
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('id, referred_by, total_gems_mined')
+      .eq('id', user.id)
+      .maybeSingle();
 
-  if (userError) throw userError;
+    if (userCheckError) throw userCheckError;
+    if (!existingUser) throw new Error('User not found in database');
 
-  // Update user's mined amount
-  const { error: updateError } = await supabase
-    .from('users')
-    .update({ total_gems_mined: userData.total_gems_mined + amount })
-    .eq('id', user.id);
+    // Update user's mined amount
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ total_gems_mined: existingUser.total_gems_mined + amount })
+      .eq('id', user.id);
 
-  if (updateError) throw updateError;
+    if (updateError) throw updateError;
 
-  // If user was referred, calculate and add referral earnings
-  if (userData.referred_by) {
-    const referralAmount = amount * 0.02; // 2% referral reward
+    // If user was referred, calculate and add referral earnings
+    if (existingUser.referred_by) {
+      const referralAmount = amount * 0.02; // 2% referral reward
 
-    // Add referral earning record
-    const { error: earningError } = await supabase
-      .from('referral_earnings')
-      .insert({
-        referrer_id: userData.referred_by,
-        referred_id: user.id,
-        amount: referralAmount
+      // Add referral earning record
+      const { error: earningError } = await supabase
+        .from('referral_earnings')
+        .insert({
+          referrer_id: existingUser.referred_by,
+          referred_id: user.id,
+          amount: referralAmount
+        });
+
+      if (earningError) throw earningError;
+
+      // Update referrer's total earnings
+      const { error: referrerError } = await supabase.rpc('update_referrer_earnings', {
+        referrer_id: existingUser.referred_by,
+        earning_amount: referralAmount
       });
 
-    if (earningError) throw earningError;
-
-    // Update referrer's total earnings
-    const { error: referrerError } = await supabase.rpc('update_referrer_earnings', {
-      referrer_id: userData.referred_by,
-      earning_amount: referralAmount
-    });
-
-    if (referrerError) throw referrerError;
+      if (referrerError) throw referrerError;
+    }
+  } catch (error) {
+    console.error('Failed to update mining rewards:', error);
+    throw error;
   }
 }

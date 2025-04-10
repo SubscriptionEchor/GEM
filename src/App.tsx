@@ -2,8 +2,11 @@ import SplashScreen from './components/SplashScreen';
 import HomePage from './components/HomePage';
 import UpgradePage from './components/UpgradePage';
 import ReferralPage from './components/ReferralPage';
+import LeaderboardPage from './components/LeaderboardPage';
 import { useState, useEffect } from 'react';
 import { BoostProvider } from './contexts/BoostContext';
+import { MiningProvider } from './contexts/MiningContext';
+import { AuthProvider } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
 
 function App() {
@@ -20,20 +23,25 @@ function App() {
 
   return (
     <div className="app">
-      <BoostProvider>
-        {showSplash ? (
-          <SplashScreen />
-        ) : (
-          <div className="fixed inset-0 bg-background-primary flex flex-col">
-            <div className="flex-1 overflow-y-auto scrollbar-hide">
-              {currentPage === 'home' && <HomePage />}
-              {currentPage === 'upgrade' && <UpgradePage />}
-              {currentPage === 'referral' && <ReferralPage />}
-            </div>
-            <Navigation currentPage={currentPage} onNavigate={setCurrentPage} />
-          </div>
-        )}
-      </BoostProvider>
+      <AuthProvider>
+        <BoostProvider>
+          <MiningProvider>
+            {showSplash ? (
+              <SplashScreen />
+            ) : (
+              <div className="fixed inset-0 bg-background-primary flex flex-col">
+                <div className="flex-1 overflow-y-auto scrollbar-hide">
+                  {currentPage === 'home' && <HomePage />}
+                  {currentPage === 'upgrade' && <UpgradePage />}
+                  {currentPage === 'referral' && <ReferralPage />}
+                  {currentPage === 'leaderboard' && <LeaderboardPage />}
+                </div>
+                <Navigation currentPage={currentPage} onNavigate={setCurrentPage} />
+              </div>
+            )}
+          </MiningProvider>
+        </BoostProvider>
+      </AuthProvider>
     </div>
   );
 }

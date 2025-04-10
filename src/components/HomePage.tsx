@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { formatNumber } from '../utils/numberUtils';
 import clsx from 'clsx';
@@ -6,61 +6,39 @@ import Lottie from 'lottie-react';
 import { AnimatePresence } from 'framer-motion';
 import fallingDiamondsAnimation from '../assets/animations/diamond falling.json';
 import diamondAnimation from '../assets/animations/diamond.json';
+import { useAuth } from '../contexts/AuthContext';
 import { useBoost } from '../contexts/BoostContext';
-import { updateMiningRewards } from '../lib/supabase';
+import { useMining } from '../contexts/MiningContext';
 import Analytics from './Analytics';
 
 interface HomePageProps {
 }
 
 const HomePage: React.FC<HomePageProps> = () => {
-  const [miningActive, setMiningActive] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(8 * 60 * 60); // 8 hours in seconds
-  const [miningRate, setMiningRate] = useState(5.00); // Base mining rate: 5 GEM/hour
-  const { activeBoosts, removeExpiredBoosts, getTotalBoost } = useBoost();
+  const { userInfo } = useAuth();
+  const { activeBoosts } = useBoost();
+  const { miningActive, timeRemaining, miningRate, error, startMining, setError } = useMining();
 
   useEffect(() => {
-    // Update mining rate when boosts change
-    const baseRate = 5.00;
-    setMiningRate(baseRate + getTotalBoost());
-    
-    // Check for expired boosts every minute
-    const boostTimer = setInterval(removeExpiredBoosts, 60000);
-    return () => clearInterval(boostTimer);
-  }, [activeBoosts, getTotalBoost, removeExpiredBoosts]);
+    // Clear any previous errors when component mounts
+    setError(null);
+  }, []);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (miningActive && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining(prev => {
-          const newTime = Math.max(0, prev - 1);
-          // If time runs out, stop mining
-          if (newTime === 0) {
-            setMiningActive(false);
-          }
-          return newTime;
-        });
-        
-        // Only update balance if there's time remaining
-        if (timeRemaining > 0) {
-          // Update mining rewards in database and handle errors
-          updateMiningRewards(miningRate / 3600).catch(error => {
-            console.error('Failed to update mining rewards:', error);
-          });
-        }
-      }, 1000);
+    if (error) {
+      // Show error message to user
+      console.error('Mining error:', error);
     }
-    return () => clearInterval(timer);
-  }, [miningActive, timeRemaining, miningRate]);
+  }, [error]);
 
-  const handleStartMining = () => {
-    if (!miningActive || timeRemaining === 0) {
-    setMiningActive(true);
-    setTimeRemaining(8 * 60 * 60);
-    // Reset mining rate to base rate when starting new session
-    setMiningRate(5.00);
+  const handleStartMining = async () => {
+    try {
+      if (!miningActive) {
+        await startMining();
+      }
+    } catch (err) {
+      console.error('Failed to start mining:', err);
     }
   };
 
@@ -92,7 +70,7 @@ const HomePage: React.FC<HomePageProps> = () => {
           {/* UID Display */}
           <div className="flex items-center gap-2 bg-background-darker/80 px-2 py-0.5 rounded-lg border border-border-medium">
             <span className="text-text-secondary text-sm">UID:</span>
-            <span className="text-text-primary font-medium">1318343</span>
+            <span className="text-text-primary font-medium">{userInfo?.id || 'Unknown'}</span>
           </div>
           {/* Level Badge */}
           <motion.span 
@@ -183,7 +161,7 @@ const HomePage: React.FC<HomePageProps> = () => {
       />
       
       {/* Mining Animation */}
-      <div className="relative flex justify-center items-center mb-6 h-[280px]">
+      <div className="relative flex justify-center items-center mb-4 h-[280px]">
         {/* Active Boosts Overlay */}
         {activeBoosts.length > 0 && (
           <div className="absolute top-0 left-0 right-0 z-10">
@@ -278,15 +256,26 @@ const HomePage: React.FC<HomePageProps> = () => {
           </motion.div>
         </div>
         
-        {/* Mining Rate */}
+        {/* Mining Rate Display */}
         <motion.div 
-          className="absolute -bottom-8 text-center w-full"
-          animate={{ y: [0, -2, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          className="absolute left-4 bottom-4 flex items-center justify-center"
+          animate={{ 
+            y: [0, -4, 0],
+            scale: [1, 1.02, 1]
+          }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
         >
-          <div className="text-2xl font-bold bg-gradient-to-r from-accent-info to-accent-purple 
+          <div className="bg-background-darker/90 backdrop-blur-md px-3 py-1 rounded-lg border border-border-medium shadow-lg
+                        flex items-center gap-1.5">
+            <span className="text-accent-info text-xs">⚡</span>
+            <div className="text-xs font-bold bg-gradient-to-r from-accent-info to-accent-purple 
                           bg-clip-text text-transparent">
-            {formatNumber(miningRate)} GEM/H
+              {formatNumber(miningRate)} GEM/H
+            </div>
           </div>
         </motion.div>
       </div>
@@ -335,11 +324,12 @@ const HomePage: React.FC<HomePageProps> = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleStartMining}
+            disabled={miningActive}
             className={clsx(
-              "px-8 py-3 rounded-2xl text-base font-bold relative overflow-hidden",
+              "px-6 py-3 rounded-2xl text-base font-bold relative overflow-hidden flex items-center gap-2",
               miningActive 
                 ? "bg-background-dark text-text-secondary border border-border-medium"
-                : "bg-gradient-to-r from-accent-primary to-accent-warning text-white"
+                : "bg-gradient-to-r from-accent-primary to-accent-warning text-white cursor-pointer"
             )}
           >
             {/* Shine effect */}
@@ -359,8 +349,30 @@ const HomePage: React.FC<HomePageProps> = () => {
             <span className="relative z-10">
             {miningActive ? 'In Progress' : 'Start Mining'}
             </span>
+            {miningActive && (
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowInfoModal(true);
+                }}
+                className="relative z-10 w-5 h-5 flex items-center justify-center text-accent-info hover:text-accent-info/80 transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </motion.button>
+            )}
           </motion.button>
         </div>
+        
+        {/* Error Message */}
+        {error && (
+          <p className="text-sm text-accent-warning mt-2 text-center">
+            {error}
+          </p>
+        )}
         
         <div className="flex gap-2 mb-3">
           {[...Array(8)].map((_, i) => (
