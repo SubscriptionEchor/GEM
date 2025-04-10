@@ -124,7 +124,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowInfoModal(false)}
-                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center"
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
               />
               
               {/* Modal Content */}
@@ -132,17 +132,24 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm
-                         bg-background-darker/95 backdrop-blur-md rounded-2xl p-6 z-[101]
-                         border border-border-medium shadow-xl
-                         flex flex-col gap-4"
-                style={{
-                  maxHeight: 'calc(100vh - 4rem)',
-                  overflowY: 'auto',
-                  margin: 'auto'
-                }}
+                className="fixed left-0 right-0 top-0 bottom-0 m-auto h-fit w-[90%] max-w-sm
+                         bg-background-darker/95 backdrop-blur-md rounded-2xl p-6 z-[101] 
+                         border border-border-medium shadow-2xl flex flex-col gap-4 
+                         max-h-[calc(100vh-4rem)] overflow-y-auto"
               >
-                <h3 className="text-xl font-bold text-text-primary">Mining Rules</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-text-primary">Mining Rules</h3>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowInfoModal(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-background-dark text-text-secondary hover:text-text-primary"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </motion.button>
+                </div>
                 <ul className="space-y-3 text-sm">
                   <li className="flex gap-2 text-text-secondary">
                     <span className="text-accent-info">⏳</span>

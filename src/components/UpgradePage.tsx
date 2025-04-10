@@ -197,18 +197,31 @@ const UpgradePage: React.FC<UpgradePageProps> = ({ onNavigate }) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowConfirmModal(false)}
-                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
               />
               
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm
-                         bg-background-darker/95 backdrop-blur-md rounded-2xl p-6 z-[101]
-                         border border-border-medium shadow-xl"
+                className="fixed left-0 right-0 top-0 bottom-0 m-auto h-fit w-[90%] max-w-sm
+                         bg-background-darker/95 backdrop-blur-md rounded-2xl p-6 z-[51] 
+                         border border-border-medium shadow-2xl max-h-[calc(100vh-4rem)] 
+                         overflow-y-auto"
               >
-                <h3 className="text-xl font-bold text-text-primary mb-4">Confirm Purchase</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-text-primary">Confirm Purchase</h3>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowConfirmModal(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-background-dark text-text-secondary hover:text-text-primary"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </motion.button>
+                </div>
                 
                 {(() => {
                   const option = upgradeOptions.find(opt => opt.id === selectedUpgrade);
