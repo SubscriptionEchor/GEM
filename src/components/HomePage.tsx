@@ -54,23 +54,18 @@ const HomePage: React.FC = () => {
 
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          <span className="text-text-muted font-medium">UID: 1318343</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-background-darker/80 px-2 py-0.5 rounded-lg border border-border-medium">
+            <span className="text-text-secondary text-sm">UID:</span>
+            <span className="text-text-primary font-medium">1318343</span>
+          </div>
           <motion.span 
-            className="bg-accent-warning px-2 py-0.5 rounded text-sm font-bold"
+            className="bg-gradient-to-r from-accent-warning to-accent-primary px-2 py-0.5 rounded-lg text-sm font-bold"
             whileHover={{ scale: 1.05 }}
           >
             Lv 0
           </motion.span>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="p-2 rounded-full bg-background-primary backdrop-blur-sm"
-        >
-          <span className="sr-only">Global</span>
-          🌍
-        </motion.button>
       </div>
 
       {/* Balance Display */}
@@ -195,14 +190,29 @@ const HomePage: React.FC = () => {
         whileTap={{ scale: 0.98 }}
         onClick={handleStartMining}
         className={clsx(
-          "w-full py-4 rounded-2xl text-2xl font-bold shadow-xl relative overflow-hidden",
+          "w-full py-4 rounded-2xl text-2xl font-bold shadow-xl relative overflow-hidden group",
           "bg-gradient-to-r from-accent-primary to-accent-warning",
           "border border-border-light",
           miningActive && "animate-pulse"
         )}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50" />
+        {/* Light beam animation */}
+        <motion.div
+          className="absolute inset-0 w-[20%] bg-gradient-to-r from-white/40 via-white/20 to-transparent skew-x-12"
+          animate={{
+            x: ['-100%', '400%'],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "linear",
+            repeatDelay: 0.5
+          }}
+        />
+        {/* Button text with glow effect */}
+        <span className="relative z-10 group-hover:text-white transition-colors duration-200">
         {miningActive ? 'Mining in progress' : 'Start Mining'}
+        </span>
       </motion.button>
       </main>
 
