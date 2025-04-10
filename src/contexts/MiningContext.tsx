@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { updateMiningRewards, getCurrentUser, createUser, supabase } from '../lib/supabase';
 import { useBoost } from './BoostContext';
 
 interface MiningContextType {
@@ -7,7 +6,6 @@ interface MiningContextType {
   timeRemaining: number;
   miningRate: number;
   error: string | null;
-  setError: (error: string | null) => void;
   startMining: () => Promise<void>;
 }
 
@@ -20,30 +18,6 @@ export const MiningProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [error, setError] = useState<string | null>(null);
   const { getTotalBoost } = useBoost();
 
-  // Check authentication status
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'SIGNED_IN') {
-        try {
-          const user = await getCurrentUser();
-          if (!user) {
-            await createUser();
-          }
-        } catch (error) {
-          console.error('Error initializing user:', error);
-          setError('Failed to initialize user data');
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setMiningActive(false);
-        setError(null);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
   useEffect(() => {
     // Update mining rate when boosts change
     const baseRate = 5.00;
@@ -53,7 +27,7 @@ export const MiningProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (miningActive && timeRemaining > 0) {
-      timer = setInterval(async () => {
+      timer = setInterval(() => {
         setTimeRemaining(prev => {
           const newTime = Math.max(0, prev - 1);
           // If time runs out, stop mining
@@ -62,64 +36,33 @@ export const MiningProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
           return newTime;
         });
-        
-        // Only update balance if there's time remaining
-        if (timeRemaining > 0) {
-          try {
-            await updateMiningRewards(miningRate / 3600);
-          } catch (error) {
-            setError('Failed to update mining rewards');
-            console.error('Failed to update mining rewards:', error);
-            // Stop mining if there's an error updating rewards
-            setMiningActive(false);
-          }
-        }
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [miningActive, timeRemaining, miningRate]);
+  }, [miningActive, timeRemaining]);
 
   const startMining = async () => {
-    // Prevent starting if already mining
-    if (miningActive) {
-      return;
-    }
-
-    if (!miningActive || timeRemaining === 0) {
+    try {
       setError(null);
 
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.error('No active session');
-          setError('Authentication required to start mining');
-          return;
-        }
-
-        try {
-          // Check if user exists in database
-          const user = await getCurrentUser();
-          console.log('Current user:', user);
-          
-          // If user doesn't exist, create them
-          if (!user) {
-            const newUser = await createUser();
-            console.log('Created new user:', newUser);
-          }
-          
-          setMiningActive(true);
-          setTimeRemaining(8 * 60 * 60);
-          console.log('Mining started successfully');
-        } catch (error) {
-          console.error('Failed to start mining:', error);
-          setError('Failed to initialize mining session');
-          setMiningActive(false);
-        }
-      } catch (error) {
-        console.error('Authentication error:', error);
-        setError('Authentication error');
+      // Check if already mining
+      if (miningActive && timeRemaining > 0) {
+        return;
+      }
+      
+      // Start mining session
+      setMiningActive(true);
+      setTimeRemaining(8 * 60 * 60);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to initialize mining session');
+      }
+      if (miningActive) {
         setMiningActive(false);
       }
+      throw error;
     }
   };
 
@@ -129,7 +72,6 @@ export const MiningProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       timeRemaining,
       miningRate,
       error,
-      setError,
       startMining
     }}>
       {children}

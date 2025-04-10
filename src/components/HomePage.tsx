@@ -18,12 +18,7 @@ const HomePage: React.FC<HomePageProps> = () => {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const { userInfo } = useAuth();
   const { activeBoosts } = useBoost();
-  const { miningActive, timeRemaining, miningRate, error, startMining, setError } = useMining();
-
-  useEffect(() => {
-    // Clear any previous errors when component mounts
-    setError(null);
-  }, []);
+  const { miningActive, timeRemaining, miningRate, error, startMining } = useMining();
 
   useEffect(() => {
     if (error) {

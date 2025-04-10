@@ -1,13 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { validateTelegramWebAppData, validateAuthDate } from '../utils/telegramUtils';
 
 interface AuthContextType {
-  isAuthenticated: boolean;
-  userId: string | null;
   userInfo: WebAppUser | null;
-  signIn: () => Promise<void>;
-  signOut: () => Promise<void>;
 }
 
 interface WebAppUser {
@@ -58,12 +52,10 @@ declare global {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<WebAppUser | null>(null);
 
   useEffect(() => {
-    const initTelegramAuth = async () => {
+    const initTelegramAuth = () => {
       // Check if we're running in Telegram WebApp environment
       if (window.Telegram?.WebApp) {
         // Tell Telegram WebApp we're ready
@@ -72,19 +64,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           // Get user data and validate
           const webApp = window.Telegram.WebApp;
-          
-          // Validate Telegram data
-          const isValid = validateTelegramWebAppData(
-            webApp.initData,
-            process.env.VITE_BOT_TOKEN || ''
-          );
-          
-          const isAuthDateValid = validateAuthDate(webApp.initDataUnsafe.auth_date);
-          
-          if (!isValid || !isAuthDateValid) {
-            throw new Error('Invalid or expired Telegram data');
-          }
-          
           const user = webApp.initDataUnsafe.user;
           
           // Enhance user data with theme info
@@ -94,33 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             theme_params: webApp.themeParams
           } : null;
 
-          
           if (enhancedUser) {
-            // Use Telegram user ID as our user ID
-            const telegramUserId = enhancedUser.id.toString();
-            
-            // Sign in with Supabase using custom JWT
-            const { error } = await supabase.auth.signInWithPassword({
-              email: `${telegramUserId}@telegram.user`,
-              password: 'telegram-user-password'
-            });
-
-            if (error) {
-              // If user doesn't exist, create one
-              if (error.status === 400) {
-                const { error: signUpError } = await supabase.auth.signUp({
-                  email: `${telegramUserId}@telegram.user`,
-                  password: 'telegram-user-password'
-                });
-
-                if (signUpError) throw signUpError;
-              } else {
-                throw error;
-              }
-            }
-
-            setIsAuthenticated(true);
-            setUserId(telegramUserId);
             setUserInfo(enhancedUser);
 
             // Apply Telegram theme
@@ -132,80 +85,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               document.documentElement.style.setProperty('--tg-theme-button-text-color', enhancedUser.theme_params.button_text_color);
             }
           } else {
-            // Fallback to dummy user for development
-            await signInAsDummy();
+            // Use dummy user for development
+            setUserInfo({
+              id: 12345,
+              first_name: 'Test',
+              username: 'test_user'
+            });
           }
         } catch (error) {
           console.error('Error during Telegram auth:', error);
-          // Fallback to dummy user
-          await signInAsDummy();
+          // Use dummy user for development
+          setUserInfo({
+            id: 12345,
+            first_name: 'Test',
+            username: 'test_user'
+          });
         }
       } else {
         // Not in Telegram WebApp, use dummy user
-        await signInAsDummy();
+        setUserInfo({
+          id: 12345,
+          first_name: 'Test',
+          username: 'test_user'
+        });
       }
     };
 
     initTelegramAuth();
   }, []);
 
-  const signInAsDummy = async () => {
-    try {
-      const DUMMY_USER_ID = 'c3bb130d-fed1-48ed-bc65-e2af328ea5c6';
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email: 'dummy@example.com',
-        password: 'dummyPassword123'
-      });
-
-      if (error) {
-        // Create dummy user if it doesn't exist
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: 'dummy@example.com',
-          password: 'dummyPassword123'
-        });
-
-        if (signUpError) throw signUpError;
-      }
-
-      setIsAuthenticated(true);
-      setUserId(DUMMY_USER_ID);
-      setUserInfo({
-        id: parseInt(DUMMY_USER_ID.split('-')[0], 16),
-        first_name: 'Dummy',
-        username: 'dummy_user'
-      });
-    } catch (error) {
-      console.error('Error signing in as dummy user:', error);
-    }
-  };
-
-  const signIn = async () => {
-    // This is now handled automatically in useEffect
-    console.warn('Manual sign in is disabled when using Telegram WebApp');
-  };
-
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-
-      setIsAuthenticated(false);
-      setUserId(null);
-      setUserInfo(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{
-      isAuthenticated,
-      userId,
-      userInfo,
-      signIn,
-      signOut
-    }}>
+    <AuthContext.Provider value={{ userInfo }}>
       {children}
     </AuthContext.Provider>
   );
