@@ -3,32 +3,45 @@ import { motion } from 'framer-motion';
 import { formatNumber, formatUSDT } from '../utils/numberUtils';
 import clsx from 'clsx';
 import Lottie from 'lottie-react';
-import miningAnimation from '../assets/animations/mining.json';
+import fallingDiamondsAnimation from '../assets/animations/diamond falling.json';
+import diamondAnimation from '../assets/animations/diamond.json';
 
 const HomePage: React.FC = () => {
   const [miningActive, setMiningActive] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(8 * 60 * 60); // 8 hours in seconds
   const [gemBalance, setGemBalance] = useState(61.77871);
-  const [miningRate, setMiningRate] = useState(4.02);
+  const [miningRate, setMiningRate] = useState(5.00); // Base mining rate: 5 GEM/hour
   const usdtValue = 0.006956; // Convert to constant since it's not being updated
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (miningActive && timeRemaining > 0) {
       timer = setInterval(() => {
-        setTimeRemaining(prev => Math.max(0, prev - 1));
-        // Update GEM balance based on mining rate
-        setGemBalance(prev => prev + (miningRate / 3600)); // Convert hourly rate to per-second
+        setTimeRemaining(prev => {
+          const newTime = Math.max(0, prev - 1);
+          // If time runs out, stop mining
+          if (newTime === 0) {
+            setMiningActive(false);
+          }
+          return newTime;
+        });
+        
+        // Only update balance if there's time remaining
+        if (timeRemaining > 0) {
+          setGemBalance(prev => prev + (miningRate / 3600)); // Convert hourly rate to per-second
+        }
       }, 1000);
     }
     return () => clearInterval(timer);
   }, [miningActive, timeRemaining, miningRate]);
 
   const handleStartMining = () => {
+    if (!miningActive || timeRemaining === 0) {
     setMiningActive(true);
     setTimeRemaining(8 * 60 * 60);
-    // Reset mining rate when starting new session
-    setMiningRate(4.02);
+    // Reset mining rate to base rate when starting new session
+    setMiningRate(5.00);
+    }
   };
 
   return (
@@ -95,49 +108,68 @@ const HomePage: React.FC = () => {
       <div className="relative flex justify-center items-center mb-12">
         {/* Glow Effect */}
         <div className="absolute inset-0 bg-accent-primary opacity-20 blur-3xl" />
-        
-        {/* Orbiting Coins */}
-        {[0, 120, 240].map((degree, index) => (
-          <motion.div
-            key={index}
-            className="absolute w-8 h-8"
-            animate={{
-              rotate: [degree, degree + 360]
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            style={{
-              transformOrigin: "120px center"
-            }}
-          >
-            <span className="text-2xl">💰</span>
-          </motion.div>
-        ))}
 
-        <motion.div
-          animate={{
-            y: [0, -8, 0],
-            scale: [1, 1.05, 1]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="w-40 h-40 bg-gradient-to-br from-accent-primary to-accent-warning 
-                     rounded-full flex items-center justify-center shadow-2xl relative z-10
-                     border-4 border-white/10 overflow-hidden"
-        >
+        {/* Falling Diamonds Animation */}
+        <div className="absolute inset-0 -z-10">
           <Lottie
-            animationData={miningAnimation}
+            animationData={fallingDiamondsAnimation}
             loop={true}
             autoplay={true}
             style={{ width: '100%', height: '100%' }}
           />
-        </motion.div>
+        </div>
+        
+        {/* Orbiting Elements */}
+        <div className="relative w-[280px] h-[280px]">
+          {[...Array(5)].map((_, index) => {
+            const randomX = (Math.random() - 0.5) * 200; // Random X position between -100 and 100
+            const randomY = Math.random() * 150 + 50; // Random Y position between 50 and 200
+            const randomDelay = Math.random() * 2; // Random delay between 0 and 2 seconds
+            const randomDuration = 1.5 + Math.random(); // Random duration between 1.5 and 2.5 seconds
+            
+            return (
+            <motion.div
+              key={index}
+              className="absolute left-1/2 top-1/2 w-8 h-8 -ml-4 -mt-4"
+              initial={{ scale: 0, y: 0, x: 0 }}
+              animate={{
+                scale: [0, 1, 1],
+                y: [0, randomY],
+                x: [0, randomX],
+                opacity: [0, 1, 0]
+              }}
+              transition={{
+                duration: randomDuration,
+                delay: randomDelay,
+                repeat: Infinity,
+                ease: "easeOut"
+              }}
+            >
+              <span className="text-2xl">💰</span>
+            </motion.div>
+          )})}
+
+          <motion.div
+            animate={{
+              y: [0, -8, 0],
+              scale: [1, 1.05, 1]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute left-1/2 top-1/2 -ml-20 -mt-20 w-40 h-40
+                       flex items-center justify-center z-10"
+          >
+            <Lottie
+              animationData={diamondAnimation}
+              loop={true}
+              autoplay={true}
+              style={{ width: '100%', height: '100%' }}
+            />
+          </motion.div>
+        </div>
         
         {/* Mining Rate */}
         <motion.div 
