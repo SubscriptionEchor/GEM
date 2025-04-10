@@ -47,10 +47,9 @@ const upgradeOptions: UpgradeOption[] = [
 ];
 
 interface UpgradePageProps {
-  onNavigate: (page: string) => void;
 }
 
-const UpgradePage: React.FC<UpgradePageProps> = ({ onNavigate }) => {
+const UpgradePage: React.FC<UpgradePageProps> = () => {
   const [selectedUpgrade, setSelectedUpgrade] = React.useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = React.useState(false);
   const [gemBalance, setGemBalance] = React.useState(61.77871);
@@ -77,8 +76,7 @@ const UpgradePage: React.FC<UpgradePageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-background-primary flex flex-col overflow-hidden">
-      <main className="flex-1 overflow-y-auto scrollbar-hide p-4 pb-20">
+    <main className="p-4 pb-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-text-primary">Upgrade Mining</h1>
@@ -92,18 +90,19 @@ const UpgradePage: React.FC<UpgradePageProps> = ({ onNavigate }) => {
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-text-secondary mb-4">Active Boosts</h2>
           <div className="bg-background-darker rounded-xl p-4 border border-border-medium">
+            <div className="max-h-[240px] overflow-y-auto">
             {activeBoosts.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <p className="text-text-secondary text-sm">No active boosts</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {activeBoosts.map((boost) => {
                   const hoursLeft = Math.max(0, Math.floor((boost.expiresAt - Date.now()) / (1000 * 60 * 60)));
                   return (
                     <div
                       key={boost.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-background-dark/50"
+                      className="flex items-center justify-between p-3 rounded-lg bg-background-dark/50 hover:bg-background-dark/70 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full animate-pulse
@@ -116,12 +115,13 @@ const UpgradePage: React.FC<UpgradePageProps> = ({ onNavigate }) => {
                           <p className="text-xs text-text-secondary">+{boost.boost} GEM/h boost</p>
                         </div>
                       </div>
-                      <div className="text-sm text-text-secondary">{hoursLeft}h left</div>
+                      <div className="text-sm text-text-secondary whitespace-nowrap">{hoursLeft}h left</div>
                     </div>
                   );
                 })}
               </div>
             )}
+            </div>
           </div>
         </div>
 
@@ -270,86 +270,7 @@ const UpgradePage: React.FC<UpgradePageProps> = ({ onNavigate }) => {
             </>
           )}
         </AnimatePresence>
-      </main>
-
-      {/* Bottom Navigation */}
-      <nav className="w-full bg-background-dark backdrop-blur-md z-50">
-        <div className="flex justify-between items-center px-8 py-3 mx-auto max-w-md border-t border-border-medium">
-          <motion.a 
-            onClick={() => onNavigate('home')}
-            className="flex flex-col items-center gap-1.5 text-text-secondary group"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <div className="w-6 h-6 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </div>
-            <span className="text-sm font-medium tracking-wide">Home</span>
-          </motion.a>
-
-          <motion.button 
-            className="flex flex-col items-center gap-1.5 text-text-primary group relative"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {/* Glowing background circle */}
-            <motion.div 
-              className="absolute top-0 w-14 h-14 rounded-full bg-gradient-to-br from-accent-primary/30 to-accent-warning/30 blur-lg"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.5, 0.8, 0.5]
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-            
-            {/* Main circle background */}
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent-primary to-accent-warning flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-[2px] rounded-full bg-background-darker/95" />
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"
-                animate={{
-                  rotate: [0, 180],
-                  scale: [1, 1.5, 1]
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-              />
-              <svg viewBox="0 0 24 24" className="w-6 h-6 relative z-10" style={{ fill: 'var(--fill-muted)' }}>
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
-            </div>
-            <span className="text-sm font-medium tracking-wide">Upgrade</span>
-          </motion.button>
-
-          <motion.a 
-            className="flex flex-col items-center gap-1.5 text-text-secondary group"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onNavigate('referral')}
-          >
-            <div className="w-6 h-6 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-5 h-5" style={{ fill: 'var(--fill-light)' }}>
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </div>
-            <span className="text-sm font-medium tracking-wide">Referral</span>
-          </motion.a>
-        </div>
-      </nav>
-    </div>
+    </main>
   );
 };
 

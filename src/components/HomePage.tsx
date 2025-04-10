@@ -7,12 +7,12 @@ import { AnimatePresence } from 'framer-motion';
 import fallingDiamondsAnimation from '../assets/animations/diamond falling.json';
 import diamondAnimation from '../assets/animations/diamond.json';
 import { useBoost } from '../contexts/BoostContext';
+import Analytics from './Analytics';
 
 interface HomePageProps {
-  onNavigate: (page: string) => void;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
+const HomePage: React.FC<HomePageProps> = () => {
   const [miningActive, setMiningActive] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(8 * 60 * 60); // 8 hours in seconds
@@ -63,10 +63,9 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-background-primary flex flex-col overflow-hidden">
-      <main className="flex-1 overflow-y-auto scrollbar-hide p-4 pb-20">
+    <main className="p-4 pb-6">
       {/* Background Effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute w-full h-full opacity-10"
           animate={{
@@ -86,7 +85,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       </div>
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-3">
           {/* UID Display */}
           <div className="flex items-center gap-2 bg-background-darker/80 px-2 py-0.5 rounded-lg border border-border-medium">
@@ -174,52 +173,41 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </AnimatePresence>
       </div>
 
-      {/* Balance Display */}
-      <motion.div 
-        className="text-center mb-12"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <motion.span 
-            className="text-text-primary text-5xl font-bold tracking-tight"
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            {formatNumber(gemBalance)} GEM
-          </motion.span>
-        </div>
-        <div className="text-text-tertiary text-sm">
-          {/* Active Boosts Pills */}
-          {activeBoosts.length > 0 && (
-            <div className="flex gap-2 justify-center mt-2 mb-1">
+      {/* Analytics */}
+      <Analytics
+        totalGemsMined={61.77871}
+        totalReferralEarnings={0}
+        totalReferrals={0}
+      />
+      
+      {/* Mining Animation */}
+      <div className="relative flex justify-center items-center mb-6 h-[280px]">
+        {/* Active Boosts Overlay */}
+        {activeBoosts.length > 0 && (
+          <div className="absolute top-0 left-0 right-0 z-10">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-4 touch-pan-x">
               {activeBoosts.map((boost) => {
                 const hoursLeft = Math.max(0, Math.floor((boost.expiresAt - Date.now()) / (1000 * 60 * 60)));
                 return (
                   <motion.div
                     key={boost.id}
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1
-                      ${boost.equipment === 'Bronze' ? 'bg-[#CD7F32]/20 text-[#CD7F32]' :
-                        boost.equipment === 'Silver' ? 'bg-[#C0C0C0]/20 text-[#C0C0C0]' :
-                        'bg-[#FFD700]/20 text-[#FFD700]'}`}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
+                    className="flex items-center gap-2 bg-background-darker/90 backdrop-blur-sm rounded-xl px-3 py-2 border border-border-medium whitespace-nowrap flex-shrink-0 cursor-grab active:cursor-grabbing"
+                    whileHover={{ scale: 1.02 }}
                   >
-                    <span>+{boost.boost} GEM/h</span>
-                    <span className="opacity-60">({hoursLeft}h)</span>
+                    <div className={`w-1.5 h-1.5 rounded-full animate-pulse
+                      ${boost.equipment === 'Bronze' ? 'bg-[#CD7F32]' :
+                        boost.equipment === 'Silver' ? 'bg-[#C0C0C0]' :
+                        'bg-[#FFD700]'}`}
+                    />
+                    <span className="text-sm font-medium text-text-primary">+{boost.boost} GEM/h</span>
+                    <span className="text-xs text-text-secondary">{hoursLeft}h</span>
                   </motion.div>
                 );
               })}
             </div>
-          )}
-          ={formatUSDT(gemBalance * usdtValue)} USDT
-        </div>
-      </motion.div>
+          </div>
+        )}
 
-      {/* Mining Animation */}
-      <div className="relative flex justify-center items-center mb-12">
         {/* Glow Effect */}
         <div className="absolute inset-0 bg-accent-primary opacity-20 blur-3xl" />
         
@@ -303,7 +291,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
       {/* Timer Display */}
       <motion.div
-        className="bg-background-darker rounded-3xl p-6 mb-8 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/10"
+        className="bg-background-darker rounded-3xl p-4 relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/10"
         whileHover={{ scale: miningActive ? 1.02 : 1 }}
         transition={{ type: "spring", stiffness: 300 }}
       >
@@ -400,86 +388,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           )}
         </div>
       </motion.div>
-      </main>
-
-      {/* Navigation */}
-      <nav className="w-full bg-background-dark backdrop-blur-md z-50">
-        <div className="flex justify-between items-center px-8 py-3 mx-auto max-w-md border-t border-border-medium">
-          <motion.button 
-            className="flex flex-col items-center gap-1.5 text-text-primary relative group"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <div className="w-6 h-6 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </div>
-            <span className="text-sm font-medium tracking-wide">Home</span>
-          </motion.button>
-
-          <motion.button 
-            className="flex flex-col items-center gap-1.5 text-text-secondary group relative"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onNavigate('upgrade')}
-          >
-            {/* Glowing background circle */}
-            <motion.div 
-              className="absolute top-0 w-14 h-14 rounded-full bg-gradient-to-br from-accent-primary/30 to-accent-warning/30 blur-lg"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.5, 0.8, 0.5]
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-            
-            {/* Main circle background */}
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent-primary to-accent-warning flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-[2px] rounded-full bg-background-darker/95" />
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"
-                animate={{
-                  rotate: [0, 180],
-                  scale: [1, 1.5, 1]
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-              />
-              <svg viewBox="0 0 24 24" className="w-6 h-6 relative z-10" style={{ fill: 'var(--fill-muted)' }}>
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
-            </div>
-            <span className="text-sm font-medium tracking-wide">Upgrade</span>
-          </motion.button>
-
-          <motion.button 
-            className="flex flex-col items-center gap-1.5 text-text-secondary group relative"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onNavigate('referral')}
-          >
-            <div className="w-6 h-6 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-5 h-5" style={{ fill: 'var(--fill-light)' }}>
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </div>
-            <span className="text-sm font-medium tracking-wide">Referral</span>
-          </motion.button>
-        </div>
-      </nav>
-    </div>
+    </main>
   );
 };
 

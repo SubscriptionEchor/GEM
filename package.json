@@ -13,7 +13,9 @@
     "framer-motion": "^11.0.8",
     "lottie-react": "^2.4.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@supabase/supabase-js": "^2.39.8",
+    "@twa-dev/sdk": "^6.9.2"
   },
   "devDependencies": {
     "@types/node": "^20.17.30",
