@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { formatNumber, formatUSDT } from '../utils/numberUtils';
+import { formatNumber } from '../utils/numberUtils';
 import clsx from 'clsx';
 import Lottie from 'lottie-react';
 import { AnimatePresence } from 'framer-motion';
@@ -19,7 +19,6 @@ const HomePage: React.FC<HomePageProps> = () => {
   const [gemBalance, setGemBalance] = useState(61.77871);
   const [miningRate, setMiningRate] = useState(5.00); // Base mining rate: 5 GEM/hour
   const { activeBoosts, removeExpiredBoosts, getTotalBoost } = useBoost();
-  const usdtValue = 0.006956; // Convert to constant since it's not being updated
 
   useEffect(() => {
     // Update mining rate when boosts change
@@ -46,7 +45,7 @@ const HomePage: React.FC<HomePageProps> = () => {
         
         // Only update balance if there's time remaining
         if (timeRemaining > 0) {
-          setGemBalance(prev => prev + (miningRate / 3600)); // Convert hourly rate to per-second
+          setGemBalance((prev: number) => prev + (miningRate / 3600)); // Convert hourly rate to per-second
         }
       }, 1000);
     }
@@ -175,7 +174,7 @@ const HomePage: React.FC<HomePageProps> = () => {
 
       {/* Analytics */}
       <Analytics
-        totalGemsMined={61.77871}
+        totalGemsMined={gemBalance}
         totalReferralEarnings={0}
         totalReferrals={0}
       />

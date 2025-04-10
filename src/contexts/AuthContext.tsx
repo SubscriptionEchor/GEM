@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Sign in with Telegram user ID as custom token
-      const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: `${tgUser.id}@telegram.user`,
         password: `tg-${tgUser.id}`, // Use predictable but secure password
       });
