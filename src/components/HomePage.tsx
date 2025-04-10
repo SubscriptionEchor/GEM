@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { formatNumber, formatUSDT } from '../utils/numberUtils';
 import clsx from 'clsx';
+import Lottie from 'lottie-react';
+import miningAnimation from '../assets/animations/mining.json';
 
 const HomePage: React.FC = () => {
   const [miningActive, setMiningActive] = useState(false);
@@ -127,9 +129,14 @@ const HomePage: React.FC = () => {
           }}
           className="w-40 h-40 bg-gradient-to-br from-accent-primary to-accent-warning 
                      rounded-full flex items-center justify-center shadow-2xl relative z-10
-                     border-4 border-white/10"
+                     border-4 border-white/10 overflow-hidden"
         >
-          <span className="text-6xl">💎</span>
+          <Lottie
+            animationData={miningAnimation}
+            loop={true}
+            autoplay={true}
+            style={{ width: '100%', height: '100%' }}
+          />
         </motion.div>
         
         {/* Mining Rate */}
