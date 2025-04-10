@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { formatNumber } from '../utils/numberUtils';
 import clsx from 'clsx';
 import Lottie from 'lottie-react';
+import miningHillAnimation from '../assets/animations/mining hill.json';
 import { AnimatePresence } from 'framer-motion';
 import fallingDiamondsAnimation from '../assets/animations/diamond falling.json';
 import diamondAnimation from '../assets/animations/diamond.json';
@@ -196,6 +197,23 @@ const HomePage: React.FC<HomePageProps> = () => {
             style={{ width: '100%', height: '100%' }}
           />
           </div>
+        )}
+        
+        {/* Pick Axe Animation */}
+        {miningActive && (
+          <motion.div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] z-20"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <Lottie
+              animationData={miningHillAnimation}
+              loop={true}
+              autoplay={true}
+              style={{ width: '100%', height: '100%' }}
+            />
+          </motion.div>
         )}
         
         {/* Orbiting Elements */}
