@@ -7,6 +7,7 @@ import { AnimatePresence } from 'framer-motion';
 import fallingDiamondsAnimation from '../assets/animations/diamond falling.json';
 import diamondAnimation from '../assets/animations/diamond.json';
 import { useBoost } from '../contexts/BoostContext';
+import { updateMiningRewards } from '../lib/supabase';
 import Analytics from './Analytics';
 
 interface HomePageProps {
@@ -16,7 +17,6 @@ const HomePage: React.FC<HomePageProps> = () => {
   const [miningActive, setMiningActive] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(8 * 60 * 60); // 8 hours in seconds
-  const [gemBalance, setGemBalance] = useState(61.77871);
   const [miningRate, setMiningRate] = useState(5.00); // Base mining rate: 5 GEM/hour
   const { activeBoosts, removeExpiredBoosts, getTotalBoost } = useBoost();
 
@@ -45,7 +45,10 @@ const HomePage: React.FC<HomePageProps> = () => {
         
         // Only update balance if there's time remaining
         if (timeRemaining > 0) {
-          setGemBalance((prev: number) => prev + (miningRate / 3600)); // Convert hourly rate to per-second
+          // Update mining rewards in database and handle errors
+          updateMiningRewards(miningRate / 3600).catch(error => {
+            console.error('Failed to update mining rewards:', error);
+          });
         }
       }, 1000);
     }
@@ -174,7 +177,7 @@ const HomePage: React.FC<HomePageProps> = () => {
 
       {/* Analytics */}
       <Analytics
-        totalGemsMined={gemBalance}
+        totalGemsMined={61.77871}
         totalReferralEarnings={0}
         totalReferrals={0}
       />

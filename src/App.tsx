@@ -5,71 +5,35 @@ import ReferralPage from './components/ReferralPage';
 import { useState, useEffect } from 'react';
 import { BoostProvider } from './contexts/BoostContext';
 import Navigation from './components/Navigation';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { initializeTelegramWebApp } from './lib/telegram';
-
-function AppContent() {
-  const { user, loading } = useAuth();
-  const [currentPage, setCurrentPage] = useState('home');
-
-  if (loading) {
-    return <SplashScreen />;
-  }
-
-  if (!user) {
-    return (
-      <div className="fixed inset-0 bg-background-primary flex items-center justify-center">
-        <p className="text-text-secondary">Loading...</p>
-      </div>
-    );
-  }
-
-  return (
-    <BoostProvider>
-      <div className="fixed inset-0 bg-background-primary flex flex-col">
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          {currentPage === 'home' && <HomePage />}
-          {currentPage === 'upgrade' && <UpgradePage />}
-          {currentPage === 'referral' && <ReferralPage />}
-        </div>
-        <Navigation currentPage={currentPage} onNavigate={setCurrentPage} />
-      </div>
-    </BoostProvider>
-  );
-}
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const [currentPage, setCurrentPage] = useState('home');
 
-  // Initialize Telegram WebApp before showing content
   useEffect(() => {
-    const init = async () => {
-      try {
-        await initializeTelegramWebApp();
-        // After successful initialization, show content after splash
-        setTimeout(() => {
-          setShowSplash(false);
-        }, 2000);
-      } catch (error) {
-        console.error('Failed to initialize Telegram Web App:', error);
-        // Even if initialization fails, show content after splash
-        setTimeout(() => {
-          setShowSplash(false);
-        }, 2000);
-      }
-    };
-    init();
-  }, []);
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2000);
 
-  if (showSplash) {
-    return <SplashScreen />;
-  }
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="app">
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <BoostProvider>
+        {showSplash ? (
+          <SplashScreen />
+        ) : (
+          <div className="fixed inset-0 bg-background-primary flex flex-col">
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+              {currentPage === 'home' && <HomePage />}
+              {currentPage === 'upgrade' && <UpgradePage />}
+              {currentPage === 'referral' && <ReferralPage />}
+            </div>
+            <Navigation currentPage={currentPage} onNavigate={setCurrentPage} />
+          </div>
+        )}
+      </BoostProvider>
     </div>
   );
 }
