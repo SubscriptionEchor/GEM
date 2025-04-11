@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
 import diamondAnimation from '../assets/animations/diamond.json';
+import { useMining } from '../contexts/MiningContext';
 import { formatNumber } from '../utils/numberUtils';
 import { useBoost } from '../contexts/BoostContext';
 import { AnimatePresence } from 'framer-motion';
@@ -9,6 +10,7 @@ import { AnimatePresence } from 'framer-motion';
 interface UpgradeOption {
   id: string;
   name: string;
+  type: string;
   cost: number;
   boost: number;
   duration: number;
@@ -19,6 +21,7 @@ interface UpgradeOption {
 const upgradeOptions: UpgradeOption[] = [
   {
     id: '24h',
+    type: '24h',
     name: '24-Hour Boost',
     cost: 5,
     boost: 1,
@@ -28,6 +31,7 @@ const upgradeOptions: UpgradeOption[] = [
   },
   {
     id: '3d',
+    type: '3d',
     name: '3-Day Boost',
     cost: 13,
     boost: 1,
@@ -37,6 +41,7 @@ const upgradeOptions: UpgradeOption[] = [
   },
   {
     id: '7d',
+    type: '7d',
     name: '7-Day Boost',
     cost: 28,
     boost: 1,
@@ -47,13 +52,16 @@ const upgradeOptions: UpgradeOption[] = [
 ];
 
 interface UpgradePageProps {
+  onNavigate: (page: string) => void;
 }
 
-const UpgradePage: React.FC<UpgradePageProps> = () => {
+const UpgradePage: React.FC<UpgradePageProps> = ({ onNavigate }) => {
   const [selectedUpgrade, setSelectedUpgrade] = React.useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = React.useState(false);
+  const [showMiningRequiredModal, setShowMiningRequiredModal] = React.useState(false);
   const [gemBalance, setGemBalance] = React.useState(61.77871);
-  const { activeBoosts, addBoost } = useBoost();
+  const { activeBoosts, addBoost, getBoostCountByType, calculateBoostEffectiveness, getTotalBoost } = useBoost();
+  const { miningActive } = useMining();
 
   const handlePurchase = () => {
     if (!selectedUpgrade) return;
@@ -61,17 +69,27 @@ const UpgradePage: React.FC<UpgradePageProps> = () => {
     const option = upgradeOptions.find(opt => opt.id === selectedUpgrade);
     if (!option) return;
     
-    if (gemBalance >= option.cost) {
-      addBoost({
-        id: `${option.id}-${Date.now()}`,
-        name: option.name,
-        boost: option.boost,
-        equipment: option.equipment
-      }, option.duration);
-      
-      setGemBalance(prev => prev - option.cost);
+    if (!miningActive) {
+      setShowMiningRequiredModal(true);
       setShowConfirmModal(false);
-      setSelectedUpgrade(null);
+      return;
+    }
+    
+    if (gemBalance >= option.cost) {
+      try {
+        addBoost({
+          id: `${option.id}-${Date.now()}`,
+          name: option.name,
+          type: option.type,
+          boost: option.boost,
+          equipment: option.equipment
+        }, option.duration);
+        setGemBalance(prev => prev - option.cost);
+        setShowConfirmModal(false);
+        setSelectedUpgrade(null);
+      } catch (error) {
+        console.error('Failed to add boost:', error);
+      }
     }
   };
 
@@ -90,38 +108,115 @@ const UpgradePage: React.FC<UpgradePageProps> = () => {
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-text-secondary mb-4">Active Boosts</h2>
           <div className="bg-background-darker rounded-xl p-4 border border-border-medium">
+            {/* Boost Summary */}
+            {activeBoosts.length > 0 && (
+              <div className="mb-4 p-3 rounded-lg bg-background-dark/50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-text-secondary">Total Active Boosts:</span>
+                  <span className="text-sm font-medium text-text-primary">{activeBoosts.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-text-secondary">Total Boost Effect:</span>
+                  <span className="text-sm font-medium text-accent-success">
+                    +{getTotalBoost().toFixed(2)} GEM/h
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="max-h-[240px] overflow-y-auto">
             {activeBoosts.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <p className="text-text-secondary text-sm">No active boosts</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {activeBoosts.map((boost) => {
-                  const hoursLeft = Math.max(0, Math.floor((boost.expiresAt - Date.now()) / (1000 * 60 * 60)));
-                  return (
-                    <div
-                      key={boost.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-background-dark/50 hover:bg-background-dark/70 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full animate-pulse
-                          ${boost.equipment === 'Bronze' ? 'bg-[#CD7F32]' :
-                            boost.equipment === 'Silver' ? 'bg-[#C0C0C0]' :
-                            'bg-[#FFD700]'}`}
-                        />
-                        <div>
-                          <h3 className="text-sm font-medium text-text-primary">{boost.name}</h3>
-                          <p className="text-xs text-text-secondary">+{boost.boost} GEM/h boost</p>
-                        </div>
-                      </div>
-                      <div className="text-sm text-text-secondary whitespace-nowrap">{hoursLeft}h left</div>
+              <div>
+                {/* Group boosts by type */}
+                {Object.entries(
+                  activeBoosts.reduce((acc, boost) => {
+                    acc[boost.type] = acc[boost.type] || [];
+                    acc[boost.type].push(boost);
+                    return acc;
+                  }, {} as Record<string, Boost[]>)
+                ).map(([type, boosts]) => (
+                  <div key={type} className="mb-4 last:mb-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-text-secondary">
+                        {boosts[0].name} × {boosts.length}
+                      </span>
+                      <span className="text-xs text-text-secondary">
+                        Total: +{boosts.reduce((sum, boost, index) => {
+                          const effectiveness = 1 - (index * 0.1);
+                          return sum + (boost.boost * Math.max(0.5, effectiveness));
+                        }, 0).toFixed(2)} GEM/h
+                      </span>
                     </div>
-                  );
-                })}
+                    
+                    <div className="space-y-2">
+                      {boosts.map((boost, index) => {
+                        const hoursLeft = Math.max(0, Math.floor((boost.expiresAt - Date.now()) / (1000 * 60 * 60)));
+                        const effectiveness = 1 - (index * 0.1);
+                        const actualBoost = boost.boost * Math.max(0.5, effectiveness);
+                        
+                        return (
+                          <div
+                            key={boost.id}
+                            className="flex items-center justify-between p-3 rounded-lg bg-background-dark/50"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 rounded-full animate-pulse
+                                ${boost.equipment === 'Bronze' ? 'bg-[#CD7F32]' :
+                                  boost.equipment === 'Silver' ? 'bg-[#C0C0C0]' :
+                                  'bg-[#FFD700]'}`}
+                              />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-sm font-medium text-text-primary">
+                                    {boost.name}
+                                  </h3>
+                                  {index > 0 && (
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-background-darker text-text-secondary">
+                                      {Math.round(effectiveness * 100)}% effective
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-text-secondary">
+                                  +{actualBoost.toFixed(2)} GEM/h boost
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-sm text-text-secondary whitespace-nowrap">
+                              {hoursLeft}h left
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             </div>
+            
+            {/* Info Banner */}
+            {activeBoosts.length > 0 && (
+              <div className="mt-4 p-3 rounded-lg bg-accent-info/10 border border-accent-info/20">
+                <div className="flex items-start gap-2">
+                  <span className="text-accent-info mt-0.5">ℹ️</span>
+                  <div>
+                    <p className="text-xs text-text-secondary">
+                      Stacking multiple boosts of the same type reduces their effectiveness:
+                    </p>
+                    <ul className="mt-1 space-y-0.5 text-xs text-text-secondary">
+                      <li>• First boost: 100% effective</li>
+                      <li>• Second boost: 90% effective</li>
+                      <li>• Third boost: 80% effective</li>
+                      <li>• Additional boosts: -10% each (minimum 50%)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -140,6 +235,10 @@ const UpgradePage: React.FC<UpgradePageProps> = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
+                if (!miningActive) {
+                  setShowMiningRequiredModal(true);
+                  return;
+                }
                 setSelectedUpgrade(option.id);
                 setShowConfirmModal(true);
               }}
@@ -171,7 +270,9 @@ const UpgradePage: React.FC<UpgradePageProps> = () => {
                   <div className="flex items-center gap-4 mt-3">
                     <div className="flex items-center gap-1.5">
                       <span className="text-accent-success">⚡</span>
-                      <span className="text-sm text-text-secondary">+{option.boost} GEM/h</span>
+                      <span className="text-sm text-text-secondary">
+                        +{(option.boost * calculateBoostEffectiveness(option.type)).toFixed(2)} GEM/h
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-accent-warning">⏱️</span>
@@ -227,6 +328,10 @@ const UpgradePage: React.FC<UpgradePageProps> = () => {
                   const option = upgradeOptions.find(opt => opt.id === selectedUpgrade);
                   if (!option) return null;
                   
+                  const currentCount = getBoostCountByType(option.type);
+                  const effectiveness = calculateBoostEffectiveness(option.type);
+                  const actualBoost = option.boost * effectiveness;
+                  
                   return (
                     <>
                       <div className="space-y-3 mb-6">
@@ -236,7 +341,14 @@ const UpgradePage: React.FC<UpgradePageProps> = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-text-secondary">Boost:</span>
-                          <span className="text-accent-success">+{option.boost} GEM/h</span>
+                          <span className="text-accent-success">
+                            +{actualBoost.toFixed(2)} GEM/h
+                            {currentCount > 0 && (
+                              <span className="text-xs text-text-secondary ml-2">
+                                ({Math.round(effectiveness * 100)}% effective)
+                              </span>
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-text-secondary">Duration:</span>
@@ -266,6 +378,66 @@ const UpgradePage: React.FC<UpgradePageProps> = () => {
                     </>
                   );
                 })()}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+        
+        {/* Mining Required Modal */}
+        <AnimatePresence>
+          {showMiningRequiredModal && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowMiningRequiredModal(false)}
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+              />
+              
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="fixed left-0 right-0 top-0 bottom-0 m-auto h-fit w-[90%] max-w-sm
+                         bg-background-darker/95 backdrop-blur-md rounded-2xl p-6 z-[51] 
+                         border border-border-medium shadow-2xl"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 mb-4 text-accent-warning">
+                    ⚠️
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-text-primary mb-2">
+                    Mining Required
+                  </h3>
+                  
+                  <p className="text-text-secondary mb-6">
+                    You need to start a mining session before you can activate any boosts.
+                  </p>
+                  
+                  <div className="flex gap-3 w-full">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowMiningRequiredModal(false)}
+                      className="flex-1 py-3 rounded-xl bg-background-dark text-text-secondary border border-border-medium"
+                    >
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setShowMiningRequiredModal(false);
+                        onNavigate('home');
+                      }}
+                      className="flex-1 py-3 rounded-xl bg-gradient-to-r from-accent-primary to-accent-warning text-white font-medium"
+                    >
+                      Start Mining
+                    </motion.button>
+                  </div>
+                </div>
               </motion.div>
             </>
           )}

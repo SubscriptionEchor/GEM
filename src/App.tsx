@@ -34,7 +34,7 @@ function App() {
                 <div className="flex-1 overflow-y-auto scrollbar-hide">
                   {currentPage === 'home' && <HomePage onNavigate={setCurrentPage} />}
                   {currentPage === 'spin' && <SpinPage />}
-                  {currentPage === 'upgrade' && <UpgradePage />}
+                  {currentPage === 'upgrade' && <UpgradePage onNavigate={setCurrentPage} />}
                   {currentPage === 'referral' && <ReferralPage />}
                   {currentPage === 'leaderboard' && <LeaderboardPage />}
                 </div>

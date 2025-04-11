@@ -18,7 +18,7 @@ interface HomePageProps {
 const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const { userInfo } = useAuth();
-  const { activeBoosts } = useBoost();
+  const { activeBoosts, getTotalBoost } = useBoost();
   const { miningActive, timeRemaining, miningRate, error, startMining } = useMining();
 
   useEffect(() => {
@@ -161,25 +161,65 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         {/* Active Boosts Overlay */}
         {activeBoosts.length > 0 && (
           <div className="absolute top-0 left-0 right-0 z-10">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-4 touch-pan-x">
-              {activeBoosts.map((boost) => {
-                const hoursLeft = Math.max(0, Math.floor((boost.expiresAt - Date.now()) / (1000 * 60 * 60)));
-                return (
-                  <motion.div
-                    key={boost.id}
-                    className="flex items-center gap-2 bg-background-darker/90 backdrop-blur-sm rounded-xl px-3 py-2 border border-border-medium whitespace-nowrap flex-shrink-0 cursor-grab active:cursor-grabbing"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <div className={`w-1.5 h-1.5 rounded-full animate-pulse
-                      ${boost.equipment === 'Bronze' ? 'bg-[#CD7F32]' :
-                        boost.equipment === 'Silver' ? 'bg-[#C0C0C0]' :
-                        'bg-[#FFD700]'}`}
-                    />
-                    <span className="text-sm font-medium text-text-primary">+{boost.boost} GEM/h</span>
-                    <span className="text-xs text-text-secondary">{hoursLeft}h</span>
-                  </motion.div>
-                );
-              })}
+            <div className="flex flex-col gap-2 px-4">
+              {/* Total Boost Summary */}
+              <div className="bg-background-darker/90 backdrop-blur-sm rounded-xl px-3 py-2 border border-border-medium">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-text-secondary">Total Boost Effect:</span>
+                  <span className="text-sm font-medium text-accent-success">
+                    +{getTotalBoost().toFixed(2)} GEM/h
+                  </span>
+                </div>
+              </div>
+              
+              {/* Active Boosts List */}
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
+                {Object.entries(
+                  activeBoosts.reduce((acc, boost) => {
+                    acc[boost.type] = acc[boost.type] || [];
+                    acc[boost.type].push(boost);
+                    return acc;
+                  }, {} as Record<string, typeof activeBoosts>)
+                ).map(([type, boosts]) => {
+                  const totalBoost = boosts.reduce((sum, boost, index) => {
+                    const effectiveness = 1 - (index * 0.1);
+                    return sum + (boost.boost * Math.max(0.5, effectiveness));
+                  }, 0);
+                  
+                  const minHoursLeft = Math.min(
+                    ...boosts.map(boost => 
+                      Math.max(0, Math.floor((boost.expiresAt - Date.now()) / (1000 * 60 * 60)))
+                    )
+                  );
+                  
+                  return (
+                    <motion.div
+                      key={type}
+                      className="flex items-center gap-2 bg-background-darker/90 backdrop-blur-sm rounded-xl px-3 py-2 border border-border-medium whitespace-nowrap flex-shrink-0"
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <div className={`w-1.5 h-1.5 rounded-full animate-pulse
+                        ${boosts[0].equipment === 'Bronze' ? 'bg-[#CD7F32]' :
+                          boosts[0].equipment === 'Silver' ? 'bg-[#C0C0C0]' :
+                          'bg-[#FFD700]'}`}
+                      />
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm font-medium text-text-primary">
+                            +{totalBoost.toFixed(2)} GEM/h
+                          </span>
+                          <span className="text-xs text-text-secondary">
+                            ({boosts.length}×)
+                          </span>
+                        </div>
+                        <span className="text-xs text-text-secondary">
+                          {minHoursLeft}h left
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -190,12 +230,12 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         {/* Falling Diamonds Animation */}
         {miningActive && (
           <div className="absolute inset-0 -z-10">
-          <Lottie
-            animationData={fallingDiamondsAnimation}
-            loop={true}
-            autoplay={true}
-            style={{ width: '100%', height: '100%' }}
-          />
+            <Lottie
+              animationData={fallingDiamondsAnimation}
+              loop={true}
+              autoplay={true}
+              style={{ width: '100%', height: '100%' }}
+            />
           </div>
         )}
         
@@ -229,37 +269,40 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         {/* Orbiting Elements */}
         <div className="relative w-[280px] h-[280px]">
           {miningActive && [...Array(10)].map((_, index) => {
-            const randomX = (Math.random() - 0.5) * 200; // Random X position between -100 and 100
-            const randomY = Math.random() * 150 + 50; // Random Y position between 50 and 200
-            const randomDelay = Math.random() * 2; // Random delay between 0 and 2 seconds
-            const randomDuration = 1.5 + Math.random(); // Random duration between 1.5 and 2.5 seconds
+            const randomX = (Math.random() - 0.5) * 200;
+            const randomY = Math.random() * 150 + 50;
+            const randomDelay = Math.random() * 2;
+            const randomDuration = 1.5 + Math.random();
             
             return (
               <motion.div
-              key={index}
-              className="absolute left-1/2 top-1/2 w-12 h-12 -ml-6 -mt-6"
-              initial={{ scale: 0, y: 0, x: 0 }}
-              animate={{
-                scale: [0, 1, 1],
-                y: [0, randomY],
-                x: [0, randomX],
-                opacity: [0, 1, 0]
-              }}
-              transition={{
-                duration: randomDuration,
-                delay: randomDelay,
-                repeat: Infinity,
-                ease: "easeOut"
-              }}
-            >
-              <span className="text-4xl">💰</span>
+                key={index}
+                className="absolute left-1/2 top-1/2 w-12 h-12 -ml-6 -mt-6"
+                initial={{ scale: 0, y: 0, x: 0 }}
+                animate={{
+                  scale: [0, 1, 1],
+                  y: [0, randomY],
+                  x: [0, randomX],
+                  opacity: [0, 1, 0]
+                }}
+                transition={{
+                  duration: randomDuration,
+                  delay: randomDelay,
+                  repeat: Infinity,
+                  ease: "easeOut"
+                }}
+              >
+                <span className="text-4xl">💰</span>
               </motion.div>
             );
           })}
 
           <motion.div
-            animate={{
-              y: [0, -8, 0],
+            animate={miningActive ? {
+              y: [0, -8, 0], 
+              scale: activeBoosts.length > 0 ? [0.9, 0.85, 0.9] : [1, 0.95, 1]
+            } : {
+              y: [0, -12, 0],
               scale: [1, 0.95, 1]
             }}
             transition={{
@@ -267,8 +310,12 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="absolute left-1/2 top-1/2 -ml-20 -mt-20 w-40 h-40
-                       flex items-center justify-center z-20"
+            className={`absolute left-1/2 -ml-20 -mt-20 flex items-center justify-center z-20
+              ${miningActive ? 
+                activeBoosts.length > 0 ?
+                  'top-[60%] w-32 h-32 -ml-16 -mt-16' :
+                  'top-1/2 w-40 h-40' :
+                'top-1/2 w-40 h-40'}`}
           >
             <Lottie
               animationData={diamondAnimation}
@@ -297,7 +344,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <span className="text-accent-info text-xs">⚡</span>
             <div className="text-xs font-bold bg-gradient-to-r from-accent-info to-accent-purple 
                           bg-clip-text text-transparent">
-              {Math.floor(miningRate)} GEM/H
+              {miningRate.toFixed(2)} GEM/H
             </div>
           </div>
         </motion.div>
@@ -349,10 +396,12 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             onClick={handleStartMining}
             disabled={miningActive}
             className={clsx(
-              "px-6 py-3 rounded-2xl text-base font-bold relative overflow-hidden flex items-center gap-2",
+              "rounded-2xl font-bold relative overflow-hidden flex items-center justify-center",
+              "text-xs sm:text-sm transition-all duration-200",
+              "min-w-[100px] sm:min-w-[120px]",
               miningActive 
-                ? "bg-background-dark text-text-secondary border border-border-medium"
-                : "bg-gradient-to-r from-accent-primary to-accent-warning text-white cursor-pointer"
+                ? "bg-background-dark text-text-secondary border border-border-medium px-3 py-2.5 sm:px-4 sm:py-3"
+                : "bg-gradient-to-r from-accent-primary to-accent-warning text-white cursor-pointer px-4 py-2.5 sm:px-6 sm:py-3"
             )}
           >
             {/* Shine effect */}
@@ -370,23 +419,10 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             />
             {/* Button text */}
             <span className="relative z-10">
-            {miningActive ? 'In Progress' : 'Start Mining'}
+              <span className="whitespace-nowrap">
+                {miningActive ? 'In Progress' : 'Start Mining'}
+              </span>
             </span>
-            {miningActive && (
-              <motion.button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowInfoModal(true);
-                }}
-                className="relative z-10 w-5 h-5 flex items-center justify-center text-accent-info hover:text-accent-info/80 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </motion.button>
-            )}
           </motion.button>
         </div>
         

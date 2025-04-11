@@ -28,7 +28,7 @@ const Analytics: React.FC<AnalyticsProps> = ({
             <span className="text-sm text-text-secondary">Available</span>
           </div>
           <p className="text-lg font-bold text-text-primary">
-            {formatNumber(totalAvailableGems)}
+            {totalAvailableGems.toFixed(1)}
           </p>
         </motion.div>
 
