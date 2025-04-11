@@ -11,12 +11,15 @@
   "dependencies": {
     "clsx": "^2.1.0",
     "framer-motion": "^11.0.8",
+    "canvas-confetti": "^1.9.2",
     "lottie-react": "^2.4.0",
+    "react-custom-roulette": "^1.4.1",
     "react": "^18.2.0", 
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/node": "^20.17.30",
+    "@types/canvas-confetti": "^1.6.4",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
     "@vitejs/plugin-react": "^4.2.1",

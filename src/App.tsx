@@ -1,6 +1,7 @@
 import SplashScreen from './components/SplashScreen';
 import HomePage from './components/HomePage';
 import UpgradePage from './components/UpgradePage';
+import SpinPage from './components/SpinPage';
 import ReferralPage from './components/ReferralPage';
 import LeaderboardPage from './components/LeaderboardPage';
 import { useState, useEffect } from 'react';
@@ -31,7 +32,8 @@ function App() {
             ) : (
               <div className="fixed inset-0 bg-background-primary flex flex-col">
                 <div className="flex-1 overflow-y-auto scrollbar-hide">
-                  {currentPage === 'home' && <HomePage />}
+                  {currentPage === 'home' && <HomePage onNavigate={setCurrentPage} />}
+                  {currentPage === 'spin' && <SpinPage />}
                   {currentPage === 'upgrade' && <UpgradePage />}
                   {currentPage === 'referral' && <ReferralPage />}
                   {currentPage === 'leaderboard' && <LeaderboardPage />}

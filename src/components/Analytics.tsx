@@ -3,15 +3,15 @@ import { motion } from 'framer-motion';
 import { formatNumber } from '../utils/numberUtils';
 
 interface AnalyticsProps {
-  totalGemsMined: number;
-  totalReferralEarnings: number;
+  totalAvailableGems: number;
   totalReferrals: number;
+  onNavigate: (page: string) => void;
 }
 
 const Analytics: React.FC<AnalyticsProps> = ({
-  totalGemsMined,
-  totalReferralEarnings,
-  totalReferrals
+  totalAvailableGems,
+  totalReferrals,
+  onNavigate
 }) => {
   return (
     <div className="bg-background-darker rounded-xl p-4 border border-border-medium mb-6">
@@ -24,11 +24,11 @@ const Analytics: React.FC<AnalyticsProps> = ({
           whileTap={{ scale: 0.98 }}
         >
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-accent-primary">💎</span>
-            <span className="text-sm text-text-secondary">Mined</span>
+            <span className="text-accent-primary">⚡</span>
+            <span className="text-sm text-text-secondary">Available</span>
           </div>
           <p className="text-lg font-bold text-text-primary">
-            {formatNumber(totalGemsMined)}
+            {formatNumber(totalAvailableGems)}
           </p>
         </motion.div>
 
@@ -36,13 +36,15 @@ const Analytics: React.FC<AnalyticsProps> = ({
           className="bg-background-dark rounded-lg p-3"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          onClick={() => onNavigate('spin')}
+          style={{ cursor: 'pointer' }}
         >
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-accent-success">🎁</span>
-            <span className="text-sm text-text-secondary">Earned</span>
+            <span className="text-accent-warning">🎲</span>
+            <span className="text-sm text-text-secondary">Spin</span>
           </div>
           <p className="text-lg font-bold text-text-primary">
-            {formatNumber(totalReferralEarnings)}
+            0
           </p>
         </motion.div>
 

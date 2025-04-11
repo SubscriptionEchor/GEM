@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { formatNumber } from '../utils/numberUtils';
 import clsx from 'clsx';
 import Lottie from 'lottie-react';
 import magicHammerAnimation from '../assets/animations/magic-hammer.json';
@@ -13,9 +12,10 @@ import { useMining } from '../contexts/MiningContext';
 import Analytics from './Analytics';
 
 interface HomePageProps {
+  onNavigate: (page: string) => void;
 }
 
-const HomePage: React.FC<HomePageProps> = () => {
+const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const { userInfo } = useAuth();
   const { activeBoosts } = useBoost();
@@ -151,9 +151,9 @@ const HomePage: React.FC<HomePageProps> = () => {
 
       {/* Analytics */}
       <Analytics
-        totalGemsMined={61.77871}
-        totalReferralEarnings={0}
+        totalAvailableGems={61}
         totalReferrals={0}
+        onNavigate={onNavigate}
       />
       
       {/* Mining Animation */}
@@ -297,7 +297,7 @@ const HomePage: React.FC<HomePageProps> = () => {
             <span className="text-accent-info text-xs">⚡</span>
             <div className="text-xs font-bold bg-gradient-to-r from-accent-info to-accent-purple 
                           bg-clip-text text-transparent">
-              {formatNumber(miningRate)} GEM/H
+              {Math.floor(miningRate)} GEM/H
             </div>
           </div>
         </motion.div>
