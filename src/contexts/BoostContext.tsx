@@ -53,7 +53,7 @@ export const BoostProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return acc;
     }, {} as Record<string, Boost[]>);
 
-    return Object.entries(boostsByType).reduce((total, [type, boosts]) => {
+    return Object.entries(boostsByType).reduce((total, [_, boosts]) => {
       return total + boosts.reduce((typeTotal, boost, index) => {
         const effectiveness = 1 - (index * 0.1); // Decrease by 10% for each additional boost
         return typeTotal + (boost.boost * Math.max(0.5, effectiveness)); // Minimum 50% effectiveness

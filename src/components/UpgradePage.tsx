@@ -4,7 +4,7 @@ import Lottie from 'lottie-react';
 import diamondAnimation from '../assets/animations/diamond.json';
 import { useMining } from '../contexts/MiningContext';
 import { formatNumber } from '../utils/numberUtils';
-import { useBoost } from '../contexts/BoostContext';
+import { useBoost, Boost } from '../contexts/BoostContext';
 import { AnimatePresence } from 'framer-motion';
 
 interface UpgradeOption {
