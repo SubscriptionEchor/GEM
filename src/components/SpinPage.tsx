@@ -1,27 +1,31 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Wheel } from 'react-custom-roulette';
-import clsx from 'clsx';
-import Lottie from 'lottie-react';
-import confetti from 'canvas-confetti';
-import diamondAnimation from '../assets/animations/diamond.json';
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Wheel } from 'react-custom-roulette'
+import clsx from 'clsx'
+import Lottie from 'lottie-react'
+import confetti from 'canvas-confetti'
+import diamondAnimation from '../assets/animations/diamond.json'
+import getSupabaseClient from '../utils/supabaseClient'
+import settings from '../settings'
 
 interface SpinData {
-  option: string;
+  option: string
   style: {
-    backgroundColor: string;
-    textColor: string;
-  };
+    backgroundColor: string
+    textColor: string
+  }
 }
 
-const SpinPage: React.FC = () => {
-  const [availableSpins, setAvailableSpins] = useState(3);
-  const [mustSpin, setMustSpin] = useState(false);
-  const [prizeNumber, setPrizeNumber] = useState(0);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [lastPrize, setLastPrize] = useState<string>('');
+const SpinPage = () => {
+  const [availableSpins, setAvailableSpins] = useState(0)
+  const [mustSpin, setMustSpin] = useState(false)
+  const [prizeNumber, setPrizeNumber] = useState(0)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [lastPrize, setLastPrize] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const data: SpinData[] = [
+  const spinWheelData: SpinData[] = [
     { option: '5 GEM', style: { backgroundColor: '#1a1a1a', textColor: '#ec4e02' } },
     { option: '10 GEM', style: { backgroundColor: '#1f1f1f', textColor: '#eab308' } },
     { option: '25 GEM', style: { backgroundColor: '#1a1a1a', textColor: '#3b82f6' } },
@@ -30,54 +34,113 @@ const SpinPage: React.FC = () => {
     { option: '250 GEM', style: { backgroundColor: '#1f1f1f', textColor: '#eab308' } },
     { option: '500 GEM', style: { backgroundColor: '#1a1a1a', textColor: '#3b82f6' } },
     { option: '1000 GEM', style: { backgroundColor: '#1f1f1f', textColor: '#a855f7' } },
-  ];
+  ].map((item, index) => ({
+    ...item,
+    option: `${settings.SPIN_OPTIONS[index]} GEM`,
+  }))
 
-  const handleSpinClick = () => {
-    if (availableSpins > 0 && !mustSpin) {
-      // Generate random prize number
-      const newPrizeNumber = Math.floor(Math.random() * data.length);
-      setPrizeNumber(newPrizeNumber);
-      setMustSpin(true);
-      setAvailableSpins(prev => prev - 1);
-    }
-  };
+  useEffect(() => {
+    fetchRemainingSpins()
+  }, [])
 
-  const handleSpinStop = () => {
-    setMustSpin(false);
-    setLastPrize(data[prizeNumber].option);
-    
-    // Trigger confetti effect
-    const duration = 3 * 1000;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-    const animationEnd = Date.now() + duration;
+  const fetchRemainingSpins = async () => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase.rpc('get_remaining_spins')
 
-    function randomInRange(min: number, max: number) {
-      return Math.random() * (max - min) + min;
-    }
-
-    const interval: NodeJS.Timeout = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
+      if (error) {
+        console.error('Error fetching remaining spins:', error)
+        setError('Failed to fetch remaining spins')
+        return
       }
 
-      const particleCount = 50 * (timeLeft / duration);
+      setAvailableSpins(data)
+    } catch (err) {
+      console.error('Failed to fetch remaining spins:', err)
+      setError('Failed to fetch remaining spins')
+    }
+  }
+
+  const handleSpinClick = async () => {
+    if (availableSpins > 0 && !mustSpin && !isLoading) {
+      try {
+        setIsLoading(true)
+        setError('')
+
+        const supabase = getSupabaseClient()
+        let { data, error } = await supabase.rpc('spin_wheel')
+
+        if (error) {
+          console.error('Error spinning wheel:', error)
+          setError(error.message || 'Failed to spin the wheel')
+          setIsLoading(false)
+          return
+        }
+        data = data?.[0]
+
+        if (!data.success) {
+          setError(data.message || 'Failed to spin the wheel')
+          setIsLoading(false)
+          return
+        }
+
+        // Find the index of the prize option in our data array
+        const prizeIndex = data.prize_option ?
+          spinWheelData.findIndex((item: SpinData) => item.option === data.prize_option) :
+          Math.floor(Math.random() * spinWheelData.length)
+
+        // Default to a random prize if we can't find the match
+        const finalPrizeIndex = prizeIndex >= 0 ? prizeIndex : Math.floor(Math.random() * spinWheelData.length)
+
+        // Set the prize number to trigger the wheel animation
+        setPrizeNumber(finalPrizeIndex)
+        setLastPrize(data.prize_option)
+        setMustSpin(true)
+        setAvailableSpins(data.spins_remaining)
+      } catch (err) {
+        console.error('Failed to spin wheel:', err)
+        setError('Failed to spin the wheel')
+        setIsLoading(false)
+      }
+    }
+  }
+
+  const handleSpinStop = () => {
+    setMustSpin(false)
+    setIsLoading(false)
+
+    // Trigger confetti effect
+    const duration = 3 * 1000
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+    const animationEnd = Date.now() + duration
+
+    function randomInRange(min: number, max: number) {
+      return Math.random() * (max - min) + min
+    }
+
+    const interval: NodeJS.Timeout = setInterval(function () {
+      const timeLeft = animationEnd - Date.now()
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval)
+      }
+
+      const particleCount = 50 * (timeLeft / duration)
 
       confetti({
         ...defaults,
         particleCount,
         origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-      });
+      })
       confetti({
         ...defaults,
         particleCount,
         origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-      });
-    }, 250);
+      })
+    }, 250)
 
-    setShowSuccessModal(true);
-  };
+    setShowSuccessModal(true)
+  }
 
   return (
     <main className="p-4 pb-6">
@@ -90,10 +153,17 @@ const SpinPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Error message */}
+      {error && (
+        <div className="bg-accent-warning/20 border border-accent-warning/30 text-accent-warning rounded-lg p-3 mb-4">
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
       {/* Spin Wheel Container */}
       <div className="bg-background-darker rounded-xl p-6 border border-border-medium mb-6 relative overflow-hidden">
         {/* Background glow effects */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 bg-gradient-to-r from-accent-primary/20 to-accent-warning/20"
           animate={{
             opacity: [0.1, 0.2, 0.1],
@@ -104,7 +174,7 @@ const SpinPage: React.FC = () => {
             ease: "easeInOut"
           }}
         />
-        
+
         <motion.div
           className="absolute inset-0"
           style={{
@@ -121,15 +191,15 @@ const SpinPage: React.FC = () => {
             ease: "linear"
           }}
         />
-        
+
         <div className="flex justify-center mb-6 relative">
           <div className="relative">
             <Wheel
               mustStartSpinning={mustSpin}
               prizeNumber={prizeNumber}
-              data={data}
+              data={spinWheelData}
               onStopSpinning={handleSpinStop}
-              backgroundColors={data.map(item => item.style.backgroundColor)}
+              backgroundColors={spinWheelData.map(item => item.style.backgroundColor)}
               textColors={['#ffffff']}
               fontSize={14}
               radiusLineWidth={1}
@@ -140,13 +210,13 @@ const SpinPage: React.FC = () => {
               perpendicularText={true}
               spinDuration={0.8}
             />
-            
+
             {/* Center Circle */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                           w-24 h-24 rounded-full bg-background-dark
                           border-2 border-accent-primary/30 flex items-center justify-center
                           shadow-[0_0_20px_rgba(236,78,2,0.2)]">
-              <motion.div 
+              <motion.div
                 className="w-16 h-16"
                 animate={{
                   scale: [1, 1.1, 1],
@@ -168,22 +238,23 @@ const SpinPage: React.FC = () => {
         </div>
 
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: isLoading || availableSpins === 0 || mustSpin ? 1 : 1.02 }}
+          whileTap={{ scale: isLoading || availableSpins === 0 || mustSpin ? 1 : 0.98 }}
           onClick={handleSpinClick}
-          disabled={availableSpins === 0 || mustSpin}
+          disabled={availableSpins === 0 || mustSpin || isLoading}
           className={clsx(
             "w-full py-4 rounded-xl text-lg font-bold relative overflow-hidden",
-            (availableSpins === 0 || mustSpin)
+            (availableSpins === 0 || mustSpin || isLoading)
               ? "bg-background-dark text-text-secondary cursor-not-allowed"
               : "bg-gradient-to-r from-accent-primary to-accent-warning text-white"
           )}
         >
-          {availableSpins === 0 
-            ? 'No Spins Left Today'
-            : mustSpin 
-              ? 'Spinning...'
-              : 'Spin Now'}
+          {isLoading ? 'Processing...' :
+            availableSpins === 0
+              ? 'No Spins Left Today'
+              : mustSpin
+                ? 'Spinning...'
+                : 'Spin Now'}
         </motion.button>
       </div>
 
@@ -233,7 +304,7 @@ const SpinPage: React.FC = () => {
               onClick={() => setShowSuccessModal(false)}
               className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
             />
-            
+
             {/* Modal Content */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -251,22 +322,22 @@ const SpinPage: React.FC = () => {
                     style={{ width: '100%', height: '100%' }}
                   />
                 </div>
-                
+
                 <h3 className="text-2xl font-bold text-text-primary mb-2">
                   Congratulations! 🎉
                 </h3>
-                
+
                 <p className="text-text-secondary mb-6">
                   You've won an amazing prize!
                 </p>
-                
+
                 <div className="bg-background-dark w-full rounded-xl p-4 mb-6">
                   <p className="text-text-secondary mb-2">Prize Amount</p>
                   <p className="text-3xl font-bold text-accent-success">
                     {lastPrize}
                   </p>
                 </div>
-                
+
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -282,7 +353,7 @@ const SpinPage: React.FC = () => {
         )}
       </AnimatePresence>
     </main>
-  );
-};
+  )
+}
 
-export default SpinPage;
+export default SpinPage

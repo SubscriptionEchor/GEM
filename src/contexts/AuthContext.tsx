@@ -37,6 +37,7 @@ declare global {
         initData: string;
         initDataUnsafe: {
           user?: WebAppUser;
+          start_param?: string;
           query_id?: string;
           auth_date?: number;
           hash?: string;
@@ -65,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Get user data and validate
           const webApp = window.Telegram.WebApp;
           const user = webApp.initDataUnsafe.user;
-          
+
           // Enhance user data with theme info
           const enhancedUser = user ? {
             ...user,

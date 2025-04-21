@@ -1,0 +1,24 @@
+{
+    "name": "gem-game-backend",
+    "version": "1.0.0",
+    "description": "Backend for the Gem Game Telegram application",
+    "main": "main.js",
+    "scripts": {
+        "start": "node main.js",
+        "dev": "nodemon main.js"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.49.4",
+        "@telegram-apps/sdk": "^1.0.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.3",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.2"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.22"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}

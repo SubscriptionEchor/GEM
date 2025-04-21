@@ -1,5 +1,5 @@
 export const formatNumber = (num: number): string => {
-  return num.toFixed(2);
+  return (num || 0).toFixed(2);
 };
 
 export const formatUSDT = (num: number): string => {

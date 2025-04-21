@@ -1,42 +1,89 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { formatNumber } from '../utils/numberUtils';
+import React, { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { formatNumber } from '../utils/numberUtils'
+import getSupabaseClient from '../utils/supabaseClient'
+import config from '../config'
+import settings from '../settings'
 
-interface ReferralPageProps {}
+interface ReferralPageProps { }
+
+interface ReferralStats {
+  referralCode: string
+  totalReferrals: number
+  totalEarned: number
+}
 
 const ReferralPage: React.FC<ReferralPageProps> = () => {
-  const [referralCode] = React.useState('GEM7X9KL');
-  const [totalReferrals] = React.useState(0);
-  const [totalEarned] = React.useState(0);
-  const [showCopyFeedback, setShowCopyFeedback] = React.useState(false);
+  const [referralStats, setReferralStats] = useState<ReferralStats>({
+    referralCode: 'Loading...',
+    totalReferrals: 0,
+    totalEarned: 0
+  })
+  const [isLoading, setIsLoading] = useState(true)
+  const [showCopyFeedback, setShowCopyFeedback] = useState(false)
+  const [showShareFallback, setShowShareFallback] = useState(false)
+  const refUrl = `${config.telegramUrl}?startapp=${referralStats.referralCode}`
+
+  useEffect(() => {
+    fetchReferralData()
+  }, [])
+
+  const fetchReferralData = async () => {
+    try {
+      setIsLoading(true)
+      const supabase = getSupabaseClient()
+
+      // Use the new RPC function to get referral stats
+      const { data, error } = await supabase
+        .from('user')
+        .select('balance, referral_code, total_referrals, referred_earnings')
+        .single()
+
+
+      if (error) throw error
+
+      if (data) {
+        const stats = data
+        setReferralStats({
+          referralCode: stats.referral_code || 'ERROR',
+          totalReferrals: parseInt(stats.total_referrals) || 0,
+          totalEarned: parseFloat(stats.referred_earnings) || 0
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching referral data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleCopyCode = async () => {
     try {
-      await navigator.clipboard.writeText(referralCode);
-      setShowCopyFeedback(true);
-      setTimeout(() => setShowCopyFeedback(false), 2000);
+      await navigator.clipboard.writeText(
+        refUrl
+      )
+      setShowCopyFeedback(true)
+      setTimeout(() => setShowCopyFeedback(false), 2000)
     } catch (error) {
-      console.error('Failed to copy:', error);
+      console.error('Failed to copy:', error)
     }
-  };
+  }
 
   const handleShare = async () => {
     try {
       await navigator.share({
         title: 'GEM Token Mining - Join & Earn',
-        text: `Join me on GEM Token Mining! Use my referral code ${referralCode} to start mining and we'll both earn rewards. Base mining rate: 5 GEM/hour`,
-        url: `https://t.me/GEMTokenMiningBot/start?ref=${referralCode}`,
-      });
+        text: `Join me on GEM Token Mining! Use my referral code ${referralStats.referralCode} to start mining and we'll both earn rewards. Base mining rate: ${settings.BASE_MINING_RATE} GEM/hour`,
+        url: refUrl,
+      })
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
-        handleCopyCode();
-        setShowShareFallback(true);
-        setTimeout(() => setShowShareFallback(false), 3000);
+        handleCopyCode()
+        setShowShareFallback(true)
+        setTimeout(() => setShowShareFallback(false), 3000)
       }
     }
-  };
-
-  const [showShareFallback, setShowShareFallback] = React.useState(false);
+  }
 
   return (
     <main className="p-4 pb-6">
@@ -48,7 +95,7 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
       {/* Detailed Referral Analytics */}
       <div className="bg-background-darker rounded-xl p-4 border border-border-medium mb-6">
         <h2 className="text-lg font-semibold text-text-primary mb-3">Referral Analytics</h2>
-        
+
         <div className="grid grid-cols-2 gap-3 mb-4">
           <motion.div
             className="bg-background-dark rounded-lg p-3"
@@ -59,8 +106,8 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
               <span className="text-accent-warning">👥</span>
               <span className="text-sm text-text-secondary">Active Refs</span>
             </div>
-            <p className="text-lg font-bold text-text-primary">{totalReferrals}</p>
-            <p className="text-xs text-text-secondary mt-1">Last 30 days</p>
+            <p className="text-lg font-bold text-text-primary">{referralStats.totalReferrals}</p>
+            <p className="text-xs text-text-secondary mt-1">Total</p>
           </motion.div>
 
           <motion.div
@@ -72,7 +119,7 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
               <span className="text-accent-success">💎</span>
               <span className="text-sm text-text-secondary">Earned</span>
             </div>
-            <p className="text-lg font-bold text-text-primary">{formatNumber(totalEarned)}</p>
+            <p className="text-lg font-bold text-text-primary">{formatNumber(referralStats.totalEarned)}</p>
             <p className="text-xs text-text-secondary mt-1">Total earnings</p>
           </motion.div>
         </div>
@@ -81,25 +128,26 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
         <motion.div
           className="bg-background-dark rounded-lg p-3 mb-4"
           whileHover={{ scale: 1.02 }}
+          style={{ display: 'none' }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 d-none">
             <div className="flex items-center gap-2">
               <span className="text-accent-info">⚡</span>
               <span className="text-sm text-text-secondary">Earning Rate</span>
             </div>
             <p className="text-sm font-medium text-text-primary">
-              {formatNumber(totalReferrals * 0.1)} GEM/hour
+              {formatNumber(referralStats.totalReferrals * 0.1)} GEM/hour
             </p>
           </div>
           <div className="h-1 bg-background-darker rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-accent-info"
-              style={{ width: `${Math.min((totalReferrals / 10) * 100, 100)}%` }}
+              style={{ width: `${Math.min((referralStats.totalReferrals / 10) * 100, 100)}%` }}
             />
           </div>
           <p className="text-xs text-text-secondary mt-2">
-            Based on {totalReferrals} active referrals
+            Based on {referralStats.totalReferrals} active referrals
           </p>
         </motion.div>
 
@@ -108,25 +156,26 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
           className="bg-background-dark rounded-lg p-3"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          style={{ display: 'none' }}
         >
           <div className="flex items-center gap-2 mb-2">
             <span className="text-accent-purple">📊</span>
             <span className="text-sm text-text-secondary">Recent Activity</span>
           </div>
-          {totalReferrals === 0 ? (
+          {referralStats.totalReferrals === 0 ? (
             <p className="text-sm text-text-secondary">No recent activity</p>
           ) : (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-text-secondary">Last 24h</span>
                 <span className="text-xs font-medium text-text-primary">
-                  +{formatNumber(totalEarned * 0.1)} GEM
+                  +{formatNumber(referralStats.totalEarned * 0.1)} GEM
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-text-secondary">Last 7d</span>
                 <span className="text-xs font-medium text-text-primary">
-                  +{formatNumber(totalEarned * 0.4)} GEM
+                  +{formatNumber(referralStats.totalEarned * 0.4)} GEM
                 </span>
               </div>
             </div>
@@ -144,17 +193,16 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
         <div className="flex gap-3 mb-6">
           <div className="flex-1 bg-background-dark rounded-xl px-4 py-3 flex items-center justify-between">
             <p className="text-lg font-mono font-bold text-text-primary tracking-wider select-all">
-              {referralCode}
+              {isLoading ? '...' : referralStats.referralCode}
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleCopyCode}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors duration-200 ${
-                showCopyFeedback
-                  ? 'text-accent-success'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors duration-200 ${showCopyFeedback
+                ? 'text-accent-success'
+                : 'text-text-secondary hover:text-text-primary'
+                }`}
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
                 {showCopyFeedback ? (
@@ -226,7 +274,7 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
         </ul>
       </div>
     </main>
-  );
-};
+  )
+}
 
-export default ReferralPage;
+export default ReferralPage
