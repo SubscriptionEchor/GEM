@@ -1,4 +1,4 @@
-# GEN
+# GEM
 GEM Token Mining Telegram Mini App
 
 ## Overview
