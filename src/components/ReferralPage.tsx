@@ -187,7 +187,7 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
       <div className="bg-background-darker rounded-xl p-6 border border-border-medium relative mb-6">
         <h2 className="text-lg font-semibold text-text-primary mb-2">Your Referral Code</h2>
         <p className="text-sm text-text-secondary mb-4">
-          Share your code and earn 2% of GEMs mined by referred users
+          Share your code and earn 25% of GEMs mined by directly referred users, plus 15% from their referrals!
         </p>
 
         <div className="flex gap-3 mb-6">
@@ -250,7 +250,7 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
             </div>
             <div>
               <h3 className="font-medium text-text-primary mb-0.5">Share Your Code</h3>
-              <p className="text-sm text-text-secondary">Send your unique referral code to friends</p>
+              <p className="text-sm text-text-secondary">Share your code with friends and start earning</p>
             </div>
           </li>
           <li className="flex gap-3">
@@ -268,10 +268,24 @@ const ReferralPage: React.FC<ReferralPageProps> = () => {
             </div>
             <div>
               <h3 className="font-medium text-text-primary mb-0.5">Earn Rewards</h3>
-              <p className="text-sm text-text-secondary">Get 2% of all GEMs they mine</p>
+              <p className="text-sm text-text-secondary">Earn 25% from direct referrals + 15% from their referrals</p>
             </div>
           </li>
         </ul>
+        
+        {/* New Feature Alert */}
+        <div className="mt-6 p-4 rounded-lg bg-accent-info/10 border border-accent-info/20">
+          <div className="flex items-start gap-3">
+            <span role="img" aria-label="new" className="text-accent-info text-lg">🎉</span>
+            <div>
+              <h3 className="font-medium text-accent-info mb-1">New: Two-Level Referral System!</h3>
+              <p className="text-sm text-text-secondary">
+                Now earn from both direct referrals (25%) and their referrals (15%). 
+                The more your network grows, the more you earn!
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   )

@@ -325,6 +325,29 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         totalSpins={spinCount}
         onNavigate={onNavigate}
       />
+      
+      {/* Subtle Referral Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-4 px-3 py-2 rounded-lg bg-accent-info/5 border border-accent-info/10
+                   flex items-center justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-accent-info text-sm">✨</span>
+          <p className="text-xs text-text-secondary">
+            <span className="text-accent-info">New:</span> Earn up to 40% from referrals
+          </p>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => onNavigate('referral')}
+          className="text-xs text-accent-info hover:text-accent-primary"
+        >
+          Learn More →
+        </motion.button>
+      </motion.div>
 
       {/* Mining Animation */}
       <div className="relative flex justify-center items-center mb-4 h-[280px] overflow-hidden">
