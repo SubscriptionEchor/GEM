@@ -40,8 +40,9 @@ The GEM Token Mining Telegram Mini App allows users to mine GEM tokens through t
   - Upgrades expire automatically, adjusting mining rate.
 
 ### Referral System
-- Single-level system: Referrer earns **2% of GEMs mined** by referred users.
-- Personalized referral code/link for sharing via Telegram.
+- Two-level system: 
+- First-level system: Referrer earns **25% of GEMs mined** by referred users.
+- Second-level system: Referrer earns **15% of GEMs mined** by referred users.
 - Tracks total referrals and GEMs earned (no individual tracking).
 
 ## UI/UX Design
